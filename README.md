@@ -1,1 +1,1 @@
-# scrum_01
+# LTP_GPT_scrum_01
