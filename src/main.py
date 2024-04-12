@@ -1,26 +1,23 @@
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+import ltp_gpt
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index_kor.html", {"request": request})
+    problem = "어떤 아이가 아파트 10층에 살고 있으며, 맑은 날에는 엘리베이터에서 6층에서 내려서 10층까지 걸어 올라간다. 그러나 날씨가 좋지 않다면 10층에서 내려서 집으로 간다. 어떤 상황일까?"
+    return templates.TemplateResponse("index.html", {"request": request, "problem": problem})
 
 @app.post("/chat")
 async def chat(request: Request):
     try:
         body = await request.json()
-        user_question = body.get('question')
-        if not user_question:
-            return JSONResponse(content={"error": "No question provided"}, status_code=400)
-        response = 'hi'  # chatgpt()
+        question = body.get("question")
+        response = ltp_gpt.evaluate_question(question)
         return JSONResponse(content={"response": response})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8080)
