@@ -15,7 +15,9 @@ cd src
 
 vi .env
 
-{add~}
+### add .env 
+OPENAI_API_KEY=sk-...
+### save and exit with ":wq"
 
 uvicorn main:app --reload
 ```
