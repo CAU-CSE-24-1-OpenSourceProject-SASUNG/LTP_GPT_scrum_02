@@ -10,9 +10,11 @@ cachetools==5.3.3
 certifi==2024.2.2
 cffi==1.16.0
 charset-normalizer==3.3.2
+Choco==1.0.5
 click==8.1.7
 config==0.5.1
 cryptography==42.0.5
+distro==1.9.0
 ecdsa==0.19.0
 fastapi==0.110.1
 Flask==3.0.3
@@ -29,13 +31,16 @@ Jinja2==3.1.3
 MarkupSafe==2.1.5
 oauth==1.0.1
 oauthlib==2.1.0
+openai==1.17.0
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
 pycparser==2.22
 pydantic==2.7.0
 pydantic_core==2.18.1
 pyparsing==3.1.2
+python-dotenv==1.0.1
 python-jose==3.3.0
+python-multipart==0.0.9
 python-oauth2==1.1.1
 requests==2.31.0
 requests-oauthlib==1.1.0
@@ -43,6 +48,7 @@ rsa==4.9
 six==1.16.0
 sniffio==1.3.1
 starlette==0.37.2
+tqdm==4.66.2
 typing_extensions==4.11.0
 urllib3==2.2.1
 uvicorn==0.29.0
