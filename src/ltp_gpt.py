@@ -13,11 +13,13 @@ def load_data(json_file):
         data = json.load(file)
     return data
 
-data = load_data('./puzzles/umbrella.json')  # JSON 파일 경로
-problem = data['problem']
-situation = data['situation']
-answer = data['answer']
-messages = data['messages']
+umbrella_data = load_data('./puzzles/umbrella.json')  # JSON 파일 경로
+gpt_data = load_data('./puzzles/GPT_answer.json') # GPT 대답 말투
+problem = umbrella_data['problem']
+situation = umbrella_data['situation']
+answer = umbrella_data['answer']
+messages = umbrella_data['messages']
+gpt_ans = gpt_data['gpt_ans']
 
 model = 'gpt-3.5-turbo'
 
@@ -65,7 +67,7 @@ def evaluate_question(question):
         if count == 0:
             return '상관없습니다'
         else:
-            message = messages + [{"role": "user", "content": question}]
+            message = messages + gpt_ans + [{"role": "user", "content": question}]
             response = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=message,
