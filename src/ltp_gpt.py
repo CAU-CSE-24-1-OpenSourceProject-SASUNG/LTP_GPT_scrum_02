@@ -23,7 +23,7 @@ problem = umbrella_data['problem']
 situation = umbrella_data['situation']
 answer = umbrella_data['answer']
 messages = umbrella_data['messages']
-gpt_ans = gpt_data['gpt_ans'] # 말투 임베딩
+gpt_ans = gpt_data['gpt_ans'] # 말투 프롬프팅
 
 model = 'gpt-3.5-turbo'
 
