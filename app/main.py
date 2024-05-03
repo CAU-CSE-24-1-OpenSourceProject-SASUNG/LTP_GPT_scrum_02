@@ -7,10 +7,11 @@ from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from .config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
 from fastapi.staticfiles import StaticFiles
-import app.ltp_gpt
+import app.ltp_gpt as ltp_gpt
+import secrets
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, https_only=True, max_age=3600)
 app.mount("/static", StaticFiles(directory = "static"), name = "static")
 
 oauth = OAuth()
@@ -21,7 +22,7 @@ oauth.register(
         client_secret = CLIENT_SECRET,
         client_kwargs={
             'scope': 'email openid profile',
-            'redirect_url' : 'http://localhost:8000/auth'
+            'redirect_url' : 'https://seaturtle.newpotatoes.org/auth'
             }
         )
 
@@ -31,7 +32,6 @@ templates = Jinja2Templates(directory="templates")
 def index(request: Request):
     user = request.session.get('user')
     if user:
-        #return RedirectResponse('welcome')
         return RedirectResponse('quiz')
 
     return templates.TemplateResponse(
@@ -52,24 +52,31 @@ def welcome(request: Request):
 
 @app.get("/login")
 async def login(request: Request):
+    state = secrets.token_urlsafe()
+    request.session['state'] = state
+    #print(f"Saved state: {request.session['state']}")  # 디버깅용 로그
     url = request.url_for('auth')
-    return await oauth.google.authorize_redirect(request, url)
+    return await oauth.google.authorize_redirect(request, url, state=state)
 
 
 @app.get('/auth')
 async def auth(request: Request):
     try:
+        state = request.query_params.get('state')
+        expected_state = request.session.pop('state', None)
+        if not state or state != expected_state:
+            raise HTTPException(status_code=400, detail="State mismatch error")
+
         token = await oauth.google.authorize_access_token(request)
+        user = token.get('userinfo')
+        if user:
+            request.session['user'] = dict(user)
+        return RedirectResponse('quiz')
     except OAuthError as e:
         return templates.TemplateResponse(
                 name='error.html',
                 context={'request': request, 'error': e.error}
                 )
-    user = token.get('userinfo')
-    if user:
-        request.session['user'] = dict(user)
-    #return RedirectResponse('welcome')
-    return RedirectResponse('quiz')
 
 
 @app.get("/quiz", response_class=HTMLResponse)
@@ -91,6 +98,7 @@ async def chat(request: Request):
         response = ltp_gpt.evaluate_question(question)
         return JSONResponse(content={"response": response})
     except Exception as e:
+        print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 
