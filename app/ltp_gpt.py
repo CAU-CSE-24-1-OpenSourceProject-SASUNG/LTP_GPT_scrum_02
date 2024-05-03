@@ -1,11 +1,8 @@
 import openai
 import os
 import json
-from dotenv import load_dotenv
+from .config import OPENAI_API_KEY
 
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
 def load_data(json_file):
@@ -13,7 +10,7 @@ def load_data(json_file):
         data = json.load(file)
     return data
 
-data = load_data('./puzzles/umbrella.json')  # JSON 파일 경로
+data = load_data('./app/puzzles/umbrella.json')  # JSON 파일 경로
 problem = data['problem']
 situation = data['situation']
 answer = data['answer']

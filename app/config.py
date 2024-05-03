@@ -5,3 +5,4 @@ load_dotenv()
 
 CLIENT_ID = os.environ.get('client-id', None)
 CLIENT_SECRET = os.environ.get('client-secret', None)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
