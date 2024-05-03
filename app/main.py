@@ -5,12 +5,12 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from .config import CLIENT_ID, CLIENT_SECRET
+from .config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
 from fastapi.staticfiles import StaticFiles
 import app.ltp_gpt
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="zcxvopuvczuipo")
+app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.mount("/static", StaticFiles(directory = "static"), name = "static")
 
 oauth = OAuth()
