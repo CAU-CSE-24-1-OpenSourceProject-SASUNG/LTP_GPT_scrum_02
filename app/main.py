@@ -8,18 +8,18 @@ from starlette.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 
-from Init import session, engine
-from Service.FeedbackService import FeedbackService
-from Service.GameService import GameService
-from Service.QueryService import QueryService
-from Service.RiddleService import RiddleService
-from Service.TotalFeedbackService import TotalFeedbackService
-from Service.UserService import UserService
+from .Init import session, engine
+from .Service.FeedbackService import FeedbackService
+from .Service.GameService import GameService
+from .Service.QueryService import QueryService
+from .Service.RiddleService import RiddleService
+from .Service.TotalFeedbackService import TotalFeedbackService
+from .Service.UserService import UserService
 from sqlalchemy import text
 
-from config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
+from .config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
 from fastapi.staticfiles import StaticFiles
-import ltp_gpt
+import app.ltp_gpt as ltp_gpt
 import secrets
 
 app = FastAPI()

@@ -1,4 +1,4 @@
-from Init import *
+from app.Init import *
 
 
 class QueryService:

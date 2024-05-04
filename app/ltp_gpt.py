@@ -1,34 +1,45 @@
 import openai
 import os
 import json
-from config import OPENAI_API_KEY
+from .config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
+
 
 def load_data(json_file):
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
     return data
 
+
+# ltp_gpt.py 파일의 경로
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# JSON 파일에 대한 상대 경로
+umbrella_path = os.path.join(current_dir, 'puzzles', 'umbrella.json')
+listening_path = os.path.join(current_dir, 'puzzles', 'listening.json')
+gpt_path = os.path.join(current_dir, 'puzzles', 'GPT_answer.json')
+
 # JSON 파일 경로
-umbrella_data = load_data('./puzzles/umbrella.json')  # Umbrella 임베딩 / 프롬프팅
-listenling_data = load_data('./puzzles/listening.json') #  listening 임베딩 / 프롬프팅
-gpt_data = load_data('./puzzles/GPT_answer.json') # GPT 대답 말투 프롬프팅
+umbrella_data = load_data('./app/puzzles/umbrella.json')  # Umbrella 임베딩 / 프롬프팅
+listenling_data = load_data('./app/puzzles/listening.json')  # listening 임베딩 / 프롬프팅
+gpt_data = load_data('./app/puzzles/GPT_answer.json')  # GPT 대답 말투 프롬프팅
 
 # 임베딩 string 가져오기
 problem = umbrella_data['problem']
 situation = umbrella_data['situation']
 answer = umbrella_data['answer']
 messages = umbrella_data['messages']
-gpt_ans = gpt_data['gpt_ans'] # 말투 프롬프팅
+gpt_ans = gpt_data['gpt_ans']  # 말투 프롬프팅
 
-data = load_data('puzzles/umbrella.json')  # JSON 파일 경로
+data = load_data('./app/puzzles/umbrella.json')  # JSON 파일 경로
 problem = data['problem']
 situation = data['situation']
 answer = data['answer']
 messages = data['messages']
 
 model = 'gpt-3.5-turbo'
+
 
 def generate_embedding(text, model="text-embedding-3-small"):
     text = text.replace("\n", " ")
@@ -47,6 +58,7 @@ situation_sentences = situation.split(".")
 situation_embeddings = [generate_embedding(sentence.strip()) for sentence in situation_sentences]
 answer_embedding = generate_embedding(answer)
 
+
 def evaluate_question(question):
     question_embedding = generate_embedding(question)
 
@@ -60,7 +72,7 @@ def evaluate_question(question):
     print(situation_similarities)
     print('상황 유사도 = ' + str(max_similarity))
 
-    if problem_similarity >= 0.8:    # 긍정
+    if problem_similarity >= 0.8:  # 긍정
         return '맞습니다'
     elif problem_similarity >= 0.6:
         return '그렇다고 볼 수 있습니다'
@@ -76,12 +88,13 @@ def evaluate_question(question):
         else:
             message = messages + gpt_ans + [{"role": "user", "content": question}]
             response = openai.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=message,
-                    temperature=0.4,
-                    top_p=0.5
-                    )
+                model="gpt-3.5-turbo",
+                messages=message,
+                temperature=0.4,
+                top_p=0.5
+            )
             return response.choices[0].message.content
+
 
 def is_neutral(question):
     neutral_keywords = ['힌트', '정답', '설명']
