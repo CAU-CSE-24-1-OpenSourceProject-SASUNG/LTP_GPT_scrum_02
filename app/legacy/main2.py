@@ -20,4 +20,3 @@ async def chat(request: Request):
         return JSONResponse(content={"response": response})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
-

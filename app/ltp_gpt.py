@@ -1,11 +1,8 @@
 import openai
 import os
 import json
-from dotenv import load_dotenv
+from config import OPENAI_API_KEY
 
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
 def load_data(json_file):
@@ -24,6 +21,12 @@ situation = umbrella_data['situation']
 answer = umbrella_data['answer']
 messages = umbrella_data['messages']
 gpt_ans = gpt_data['gpt_ans'] # 말투 프롬프팅
+
+data = load_data('puzzles/umbrella.json')  # JSON 파일 경로
+problem = data['problem']
+situation = data['situation']
+answer = data['answer']
+messages = data['messages']
 
 model = 'gpt-3.5-turbo'
 
