@@ -5,11 +5,15 @@ class UserService:
     def __init__(self, session):
         self.session = session
 
-    def create_user(self, user_id, email):
-        user = User(user_id=user_id, email=email)
+    # def create_user(self, user_id, email):
+    #     user = User(user_id=user_id, email=email)
+    #     self.session.add(user)
+    #     self.session.commit()
+
+    def create_user(self, user_id):
+        user = User(user_id=user_id)
         self.session.add(user)
         self.session.commit()
-
     def get_user(self, user_id):
         return self.session.query(User).filter_by(user_id=user_id).first()
 

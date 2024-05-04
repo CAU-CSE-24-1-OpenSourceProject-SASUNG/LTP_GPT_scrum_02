@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 # 'mysql_pymysql://db_id:db_password@dp_ip/dp_port'
 engine = create_engine('mysql+pymysql://root:gusdn4818@localhost/ossp', echo=True)
 Base = sqlalchemy.orm.declarative_base()
-
+3
 # Session 선언. Session을 이용하여 db를 조작 가능
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -15,7 +15,7 @@ class User(Base):
     __tablename__ = 'users'
 
     user_id = Column(String(255), primary_key=True)
-    email = Column(String(255))
+    # email = Column(String(255), primary_key=True)
 
     user_games = relationship("User_Game")
     total_feedback = relationship("Total_Feedback", uselist=False)
