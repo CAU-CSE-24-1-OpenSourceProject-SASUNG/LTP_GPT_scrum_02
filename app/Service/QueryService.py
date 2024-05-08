@@ -16,6 +16,12 @@ class QueryService:
     def get_query(self, query_id):
         return self.session.query(Query).filter_by(query_id=query_id).first()
 
+    def get_query_by_game(self, game_id):
+        return self.session.query(Game_Query).filter_by(game_id=game_id).all()
+
+    def get_response(self, query):
+        return self.session.query(Query).filter_by(query=query).first()
+
     def get_all_query(self):
         return self.session.query(Query).all()
 

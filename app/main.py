@@ -149,11 +149,13 @@ async def chat(request: Request):
     try:
         body = await request.json()
         question = body.get("question")
-        response = ltp_gpt.evaluate_question(question)
-
         game_id = request.session.get('game_id')  # 세션에서 game_id 가져오기
-        query_id = str(uuid.uuid4())
-        queryService.create_query(game_id, query_id, question, response, False)
+
+        response = queryService.get_response(question)  # 같은 질문이면 GPT의 응답을 이전 답변(DB)에서 가져오기
+        if not response:
+            response = ltp_gpt.evaluate_question(question)
+            query_id = str(uuid.uuid4())
+            queryService.create_query(game_id, query_id, question, response, False)
 
         return JSONResponse(content={"response": response})
     except Exception as e:

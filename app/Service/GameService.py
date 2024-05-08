@@ -26,6 +26,9 @@ class GameService:
     def get_game(self, game_id):
         return self.session.query(Game).filter_by(game_id=game_id).first()
 
+    def get_game_by_user(self, user_id):
+        return self.session.query(User_Game).filter_by(user_id=user_id).all()
+
     def get_all_game(self):
         return self.session.query(Game).all()
 
