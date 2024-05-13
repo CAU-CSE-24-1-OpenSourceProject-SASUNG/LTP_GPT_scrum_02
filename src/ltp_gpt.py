@@ -51,7 +51,7 @@ def evaluate_question(question):
     situation_similarities = [similarity(question_embedding, emb) for emb in situation_embeddings]
     max_similarity = max(situation_similarities)
     answer_similarity = similarity(question_embedding, answer_embedding)
-
+    
     print('정답 유사도 = ' + str(answer_similarity))
     print('문제 유사도 = ' + str(problem_similarity))
     print(situation_similarities)
@@ -79,6 +79,33 @@ def evaluate_question(question):
                     top_p=0.5
                     )
             return response.choices[0].message.content
+
+gpt_similarity = load_data('./puzzles/GPT_similarity_umbrella.json') # GPT 유사도 검증
+similarity_message = gpt_similarity['gpt_similarity']
+def evaluate_similarity(question):
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=similarity_message,
+        temperature=0.0,
+        top_p=0.5
+    )
+    percent = ""
+    ans = response.choices[0].message.content;
+    tokens = ans.split()
+    if tokens[4] == "True":
+        percent = "100%"
+    elif tokens[3] == "True":
+        percent = "80%"
+    elif tokens[2] == "True":
+        percent = "60%"
+    elif tokens[1] == "True":
+        percent = "40%"
+    elif tokens[0] == "True":
+        percent = "20%"
+    else:
+        percent = "0%"
+
+    return percent
 
 def is_neutral(question):
     neutral_keywords = ['힌트', '정답', '설명']
