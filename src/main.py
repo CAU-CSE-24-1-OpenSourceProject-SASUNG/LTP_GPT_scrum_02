@@ -17,7 +17,22 @@ async def chat(request: Request):
         body = await request.json()
         question = body.get("question")
         response = ltp_gpt.evaluate_question(question)
+        similarity = ltp_gpt.evaluate_similarity(question)
+
+        print(response)
+        print(similarity)
         return JSONResponse(content={"response": response})
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
+@app.post("/similarity")
+async def similarity(request: Request):
+    try:
+        body = await request.json()
+        question = body.get("question")
+        response = ltp_gpt.evaluate_question(question)
+
+        print(response)
+        return JSONResponse(content={"response": response})
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
