@@ -17,9 +17,11 @@ async def chat(request: Request):
         body = await request.json()
         question = body.get("question")
         response = ltp_gpt.evaluate_question(question)
-        similarity = ltp_gpt.evaluate_similarity(question)
-
+        similarity = "0%"
         print(response)
+        if(response == '맞습니다.' or response == '그렇다고 볼 수 있습니다.'):
+            similarity = ltp_gpt.evaluate_similarity(question)
+
         print(similarity)
         return JSONResponse(content={"response": response})
     except Exception as e:

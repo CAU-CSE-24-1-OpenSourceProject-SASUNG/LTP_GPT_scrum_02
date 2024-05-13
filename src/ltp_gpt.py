@@ -58,9 +58,9 @@ def evaluate_question(question):
     print('상황 유사도 = ' + str(max_similarity))
 
     if problem_similarity >= 0.8:    # 긍정
-        return '맞습니다'
+        return '맞습니다.'
     elif problem_similarity >= 0.6:
-        return '그렇다고 볼 수 있습니다'
+        return '그렇다고 볼 수 있습니다.'
     else:
         count = 0
         for i in range(len(situation_sentences)):
@@ -69,42 +69,54 @@ def evaluate_question(question):
                 count += 1
         print("count : " + str(count))
         if count == 0:
-            return '상관없습니다'
+            return '문제의 정답과 상관이 없습니다.'
         else:
             message = messages + gpt_ans + [{"role": "user", "content": question}]
             response = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=message,
-                    temperature=0.4,
+                    temperature=0.0,
                     top_p=0.5
                     )
             return response.choices[0].message.content
 
 gpt_similarity = load_data('./puzzles/GPT_similarity_umbrella.json') # GPT 유사도 검증
-similarity_message = gpt_similarity['gpt_similarity']
+similarity_messages = gpt_similarity['gpt_similarity']
 def evaluate_similarity(question):
+    print("hello")
+    similarity_message = similarity_messages + [{"role": "user", "content": question}]
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=similarity_message,
         temperature=0.0,
         top_p=0.5
     )
-    percent = ""
-    ans = response.choices[0].message.content;
-    tokens = ans.split()
-    if tokens[4] == "True":
+    ans = response.choices[0].message.content
+    print(ans)
+    myList = [False, False, False, False, False]
+    tfIndex = 0
+    for i in ans:
+        if i <= len(ans) - 4 and ans[i] == 'T' and ans[i+1] == 'r' and ans[i+2] == 'u' and ans[i+3] == 'e':
+            myList[tfIndex] = True
+            tfIndex = tfIndex + 1
+        elif i <= len(ans) - 5 and ans[i] == 'F' and ans[i+1] == 'a' and ans[i+2] == 'l' and ans[i+3] == 's' and ans[i+4] == 'e':
+            myList[tfIndex] = False
+            tfIndex = tfIndex + 1
+        if(tfIndex > 4):
+            break
+    print(myList)
+    if myList[4] == True:
         percent = "100%"
-    elif tokens[3] == "True":
+    elif myList[3] == True:
         percent = "80%"
-    elif tokens[2] == "True":
+    elif myList[2] == True:
         percent = "60%"
-    elif tokens[1] == "True":
+    elif myList[1] == True:
         percent = "40%"
-    elif tokens[0] == "True":
+    elif myList[0] == True:
         percent = "20%"
     else:
         percent = "0%"
-
     return percent
 
 def is_neutral(question):
