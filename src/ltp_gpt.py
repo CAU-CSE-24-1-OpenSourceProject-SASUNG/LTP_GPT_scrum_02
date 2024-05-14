@@ -84,7 +84,6 @@ def evaluate_question(question):
 gpt_similarity = load_data('./puzzles/GPT_similarity_umbrella.json') # GPT 유사도 검증
 similarity_messages = gpt_similarity['gpt_similarity']
 def evaluate_similarity(question):
-    print("hello")
     similarity_message = similarity_messages + [{"role": "user", "content": question}]
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -95,7 +94,9 @@ def evaluate_similarity(question):
     ans = response.choices[0].message.content
     
     ####
+    print("####여기는 GPT 응답####")
     print(ans)
+    print()
     
     #return ans
     myList = [False, False, False, False, False]
@@ -104,7 +105,9 @@ def evaluate_similarity(question):
     ans = ans[index_sharp:]
     
     ####
+    print("####여기는 마지막 출력부분####")
     print(ans)
+    print()
     
     TrueMatches = re.finditer("True", ans)
     FalseMatches = re.finditer("False", ans)
@@ -116,8 +119,9 @@ def evaluate_similarity(question):
     myDictionary = dict(sorted(myDictionary.items()))
     
     ####
+    print("####여기는 T/F가 나타난 index와 결과가 저장된 딕셔너리####")
     print(myDictionary)
-
+    print()
 
     values = list(myDictionary.values())
     for i in range (0,5):
@@ -125,8 +129,9 @@ def evaluate_similarity(question):
     
 
     ####
+    print("####여기는 T/F 결과####")
     print(myList)
-    
+    print() 
 
     if myList[4] == True:
         percent = "100%"
