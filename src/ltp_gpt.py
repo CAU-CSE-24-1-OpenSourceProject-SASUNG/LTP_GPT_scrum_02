@@ -61,7 +61,7 @@ def evaluate_question(question):
     if problem_similarity >= 0.8:    # 긍정
         return '맞습니다.'
     elif problem_similarity >= 0.6:
-        return '그렇다고 볼 수 있습니다.'
+        return '그렇다고 볼 수도 있습니다.'
     else:
         count = 0
         for i in range(len(situation_sentences)):
