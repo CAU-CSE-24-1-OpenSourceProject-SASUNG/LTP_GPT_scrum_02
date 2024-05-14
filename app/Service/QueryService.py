@@ -1,17 +1,19 @@
 from app.Init import *
+import datetime
 
 
 class QueryService:
     def __init__(self, session):
         self.session = session
 
-    def create_query(self, game_id, query_id, query, response, is_correct):
-        query = Query(query_id=query_id, query=query, response=response, is_correct=is_correct)
-        game_query = Game_Query(game_id=game_id, query_id=query_id)
+    def create_query(self, query, response, is_correct=False):
+        time = datetime.datetime.now()
+        query = Query(query=query, response=response, createdAt=time, is_correct=is_correct)
 
         self.session.add(query)
-        self.session.add(game_query)
         self.session.commit()
+
+        return query.query_id
 
     def get_query(self, query_id):
         return self.session.query(Query).filter_by(query_id=query_id).first()
@@ -19,8 +21,16 @@ class QueryService:
     def get_query_by_game(self, game_id):
         return self.session.query(Game_Query).filter_by(game_id=game_id).all()
 
-    def get_response(self, query):
-        return self.session.query(Query).filter_by(query=query).first()
+    def get_response(self, query, riddle_id):
+        games = self.session.query(Game).filter_by(riddle_id=riddle_id).all()
+        for game in games:
+            game_queries = self.session.query(Game_Query).filter_by(game_id=game.game_id).all()
+            for game_query in game_queries:
+                query_object = game_query.query
+                if query_object.query == query:
+                    return query_object.response
+                else:
+                    return None
 
     def get_all_query(self):
         return self.session.query(Query).all()

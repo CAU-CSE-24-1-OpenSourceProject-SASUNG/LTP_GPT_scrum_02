@@ -1,4 +1,4 @@
-import uuid
+import datetime
 
 from fastapi import FastAPI, HTTPException
 from fastapi.templating import Jinja2Templates
@@ -15,6 +15,10 @@ from .Service.QueryService import QueryService
 from .Service.RiddleService import RiddleService
 from .Service.TotalFeedbackService import TotalFeedbackService
 from .Service.UserService import UserService
+from .Service.RankingService import RankingService
+from .Service.UserGameService import UserGameService
+from .Service.GameQueryService import GameQueryService
+
 from sqlalchemy import text
 
 from .config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
@@ -47,22 +51,24 @@ riddleService = RiddleService(session)
 queryService = QueryService(session)
 feedbackService = FeedbackService(session)
 totalFeedbackService = TotalFeedbackService(session)
+rankingService = RankingService(session)
+ugService = UserGameService(session)
+gqService = GameQueryService(session)
 
 # DB 모든 데이터 삭제
 with engine.connect() as conn:
-    table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'riddles', 'feedbacks', 'queries']
+    table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries', 'ranking']
+    # table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries']
     conn.execute(text('SET FOREIGN_KEY_CHECKS = 0;'))  # 외래 키 제약 조건을 잠시 해제
     for table_name in table_names:
         delete_query = text('TRUNCATE TABLE {};'.format(table_name))
         conn.execute(delete_query)
     conn.execute(text('SET FOREIGN_KEY_CHECKS = 1;'))  # 외래 키 제약 조건을 다시 활성화
 
-# 게임의 종류를 선택
-riddleService.create_riddle('Umbrella', 0)
-
 
 @app.get("/")
 def index(request: Request):
+    request.session.clear()
     user = request.session.get('user')
     if user:
         return RedirectResponse('quiz')
@@ -108,11 +114,13 @@ async def auth(request: Request):
 
         # 로그인 성공
         email = user.get('email')
-        user = userService.get_user(email)
+        name = user.get('name')
+        user = userService.get_user_email(email)
         if user is None:
-            userService.create_user(email)
-        request.session['user_id'] = email
-        # user_id = str(uuid.uuid4())
+            user_id = userService.create_user(email, name)
+            request.session['user_id'] = user_id
+        else:
+            request.session['user_id'] = user.user_id
 
         return RedirectResponse('quiz')
     except OAuthError as e:
@@ -125,14 +133,19 @@ async def auth(request: Request):
 @app.get("/quiz", response_class=HTMLResponse)
 async def home(request: Request):
     user = request.session.get('user')
-    # Game 생성
-    user_id = request.session.get('user_id')  # 세션에서 user_id 가져오기
+    user_id = request.session.get('user_id')
     if not user_id:
         # user_id가 세션에 없는 경우 로그인 페이지로 리다이렉트
         return RedirectResponse('/login')
 
-    game_id = str(uuid.uuid4())
-    gameService.create_game(user_id, game_id, 'Umbrella', 0, 0, 0, False)
+    # Game 생성
+    game_start_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    riddle_id = riddleService.get_riddle_by_name('Umbrella').riddle_id
+    game_id = gameService.create_game(user_id, riddle_id)
+    ugService.create_user_game(user_id, game_id)
+
+    request.session['game_start_time'] = game_start_time_str
+    request.session['riddle_id'] = riddle_id
     request.session['game_id'] = game_id
 
     if not user:
@@ -149,13 +162,30 @@ async def chat(request: Request):
     try:
         body = await request.json()
         question = body.get("question")
-        game_id = request.session.get('game_id')  # 세션에서 game_id 가져오기
+        user_id = request.session.get('user_id')
+        game_id = request.session.get('game_id')
+        riddle_id = request.session.get('riddle_id')
 
-        response = queryService.get_response(question)  # 같은 질문이면 GPT의 응답을 이전 답변(DB)에서 가져오기
+        response = queryService.get_response(question, riddle_id)  # 메모이제이션
         if not response:
             response = ltp_gpt.evaluate_question(question)
-            query_id = str(uuid.uuid4())
-            queryService.create_query(game_id, query_id, question, response, False)
+        query_id = queryService.create_query(question, response)
+        gqService.create_game_query(game_id, query_id)
+
+        game = gameService.get_game(game_id)
+        if game.is_first is True:  # 동일 게임에 대해 최초의 정답만 데이터, 랭킹 업데이트
+            if "정답" in response:  # 정답이면 game을 종료 -> 정답을 맞춘 것을 어떻게 판단?
+                game_end_time = datetime.datetime.now()
+                game_start_time_str = request.session.get('game_start_time')
+                if game_start_time_str:
+                    game_start_time = datetime.datetime.strptime(game_start_time_str, "%Y-%m-%d %H:%M:%S")
+                    play_time = game_end_time - game_start_time
+                    gameService.end_game(game_id, play_time, False, True)  # Game tuple 데이터 업데이트
+                    game = gameService.get_game(game_id)
+                    if game:
+                        rankingService.update_ranking(game)  # 랭킹 업데이트
+                    userService.level_up(user_id)
+            # 정답이 아니라 game을 중간에 나갔다면.. controller 다른 곳에 작성
 
         return JSONResponse(content={"response": response})
     except Exception as e:

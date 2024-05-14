@@ -6,85 +6,111 @@ from sqlalchemy.orm import relationship, sessionmaker
 # 'mysql_pymysql://db_id:db_password@dp_ip/dp_port'
 engine = create_engine('mysql+pymysql://root:gusdn4818@localhost/ossp', echo=False)
 Base = sqlalchemy.orm.declarative_base()
-3
+
 # Session 선언. Session을 이용하여 db를 조작 가능
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
 class User(Base):
     __tablename__ = 'users'
 
-    user_id = Column(String(255), primary_key=True)
-    # email = Column(String(255), primary_key=True)
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
+    gmail = Column(String(255), primary_key=True)
+    name = Column(String(255))
+    experience = Column(Integer)
 
-    user_games = relationship("User_Game")
     total_feedback = relationship("Total_Feedback", uselist=False)
 
 
 class User_Game(Base):
     __tablename__ = 'user_games'
 
-    user_id = Column(String(255), ForeignKey('users.user_id'), primary_key=True)
-    game_id = Column(String(255), ForeignKey('games.game_id'), primary_key=True)
+    ug_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'))
+    game_id = Column(Integer, ForeignKey('games.game_id'))
+
+    user = relationship("User")
+    game = relationship("Game", uselist=False)
 
 
 class Total_Feedback(Base):
     __tablename__ = "total_feedbacks"
 
-    user_id = Column(String(255), ForeignKey('users.user_id'), primary_key=True)
+    total_feedback_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'))
     content = Column(String(255))
 
 
 class Riddle(Base):
     __tablename__ = 'riddles'
 
-    riddle_id = Column(String(255), primary_key=True)
+    riddle_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(255))
+    title = Column(String(255))
     hit_ratio = Column(Float)
 
-    games = relationship("Game", back_populates="riddle")
+
+class Ranking(Base):
+    __tablename__ = 'ranking'
+
+    rank_id = Column(Integer, primary_key=True, autoincrement=True)
+    riddle_id = Column(Integer, ForeignKey('riddles.riddle_id'))
+    rank = Column(Integer)
+    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_name = Column(String(255))
+    play_time = Column(Time)
+
+    user = relationship('User')
+    riddle = relationship('Riddle')
 
 
 class Query(Base):
     __tablename__ = "queries"
 
-    query_id = Column(String(255), primary_key=True)
+    query_id = Column(Integer, primary_key=True, autoincrement=True)
     query = Column(String(255))
     response = Column(String(255))
+    createdAt = Column(DateTime)
     is_correct = Column(Boolean)
 
-    game_query = relationship('Game_Query', uselist=False)
-    feedback = relationship('Feedback', uselist=False, back_populates='query')
+    feedback = relationship('Feedback', uselist=False)
 
 
 class Game_Query(Base):
     __tablename__ = "game_queries"
 
-    game_id = Column(String(255), ForeignKey('games.game_id'), primary_key=True)
-    query_id = Column(String(255), ForeignKey('queries.query_id'), primary_key=True)
+    gq_id = Column(Integer, primary_key=True, autoincrement=True)
+    game_id = Column(Integer, ForeignKey('games.game_id'))
+    query_id = Column(Integer, ForeignKey('queries.query_id'))
+
+    game = relationship('Game')
+    query = relationship('Query', uselist=False)
 
 
 class Game(Base):
     __tablename__ = 'games'
 
-    game_id = Column(String(255), primary_key=True)
-    riddle_id = Column(String(255), ForeignKey('riddles.riddle_id'))
+    game_id = Column(Integer, primary_key=True, autoincrement=True)
+    riddle_id = Column(Integer, ForeignKey('riddles.riddle_id'))
+    title = Column(String(255))
+    createdAt = Column(DateTime)
+    updatedAt = Column(DateTime)
+    is_first = Column(Boolean)
     query_count = Column(Integer)
     play_time = Column(Time)
     query_length = Column(Integer)
     hit = Column(Boolean)
 
-    game_queries = relationship("Game_Query")
-    user_game = relationship('User_Game', uselist=False)
-    riddle = relationship("Riddle", back_populates="games")
+    riddle = relationship('Riddle')
 
 
 class Feedback(Base):
     __tablename__ = "feedbacks"
 
-    query_id = Column(String(255), ForeignKey('queries.query_id'), primary_key=True)
+    feedback_id = Column(Integer, primary_key=True, autoincrement=True)
+    query_id = Column(Integer, ForeignKey('queries.query_id'))
     content = Column(String(255))
-
-    query = relationship("Query", uselist=False, back_populates="feedback")
 
 
 Base.metadata.create_all(engine)
