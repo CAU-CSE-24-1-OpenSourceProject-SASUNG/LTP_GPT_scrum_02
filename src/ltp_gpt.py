@@ -88,7 +88,7 @@ def evaluate_similarity(question):
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=similarity_message,
-        temperature=0.4,
+        temperature=0.0,
         top_p=0.5
     )
     ans = response.choices[0].message.content
