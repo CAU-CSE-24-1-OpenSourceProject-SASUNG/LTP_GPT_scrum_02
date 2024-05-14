@@ -1,10 +1,10 @@
 from app.Init import session
-from app.Service.FeedbackService import FeedbackService
-from app.Service.GameService import GameService
-from app.Service.QueryService import QueryService
-from app.Service.RiddleService import RiddleService
-from app.Service.TotalFeedbackService import TotalFeedbackService
-from app.Service.UserService import UserService
+from app.service.FeedbackService import FeedbackService
+from app.service.GameService import GameService
+from app.service.QueryService import QueryService
+from app.service.RiddleService import RiddleService
+from app.service.TotalFeedbackService import TotalFeedbackService
+from app.service.UserService import UserService
 
 userService = UserService(session)
 gameService = GameService(session)

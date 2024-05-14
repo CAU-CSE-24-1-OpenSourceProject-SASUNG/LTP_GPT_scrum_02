@@ -6,7 +6,8 @@ class GameService:
     def __init__(self, session):
         self.session = session
 
-    def create_game(self, user_id, riddle_id, is_first=True, query_count=0, play_time=0, query_length=0, hit=False):
+    def create_game(self, user_id, riddle_id, is_first=True, progress=0, query_count=0, play_time=0, query_length=0,
+                    hit=False):
         count = 1
         user_games = self.session.query(User_Game).filter_by(user_id=user_id).all()
         for user_game in user_games:
@@ -16,7 +17,7 @@ class GameService:
         createdAt = datetime.datetime.now()
         updatedAt = datetime.datetime.now()
         game = Game(riddle_id=riddle_id, title=title, createdAt=createdAt, updatedAt=updatedAt, is_first=is_first,
-                    query_count=query_count, play_time=play_time, query_length=query_length, hit=hit)
+                    progress=progress, query_count=query_count, play_time=play_time, query_length=query_length, hit=hit)
         self.session.add(game)
         self.session.commit()
 
@@ -34,7 +35,11 @@ class GameService:
     def get_game_count(self, riddle_id):
         return self.session.query(Game).filter_by(riddle_id=riddle_id).count()
 
-
+    # 게임에 재접속
+    def reaccess(self, game_id):
+        game = self.get_game(game_id)
+        game.is_first = False
+        game.updatedAt = datetime.datetime.now()
 
     # 최츠의 게임에서 정답을 맞췄을 때
     def end_game(self, game_id, play_time, is_first, hit):

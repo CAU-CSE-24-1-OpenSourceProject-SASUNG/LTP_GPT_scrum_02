@@ -1,25 +1,26 @@
 import datetime
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, HTMLResponse
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth, OAuthError
 
 from .Init import session, engine
-from .Service.FeedbackService import FeedbackService
-from .Service.GameService import GameService
-from .Service.QueryService import QueryService
-from .Service.RiddleService import RiddleService
-from .Service.TotalFeedbackService import TotalFeedbackService
-from .Service.UserService import UserService
-from .Service.RankingService import RankingService
-from .Service.UserGameService import UserGameService
-from .Service.GameQueryService import GameQueryService
+from .service.FeedbackService import FeedbackService
+from .service.GameService import GameService
+from .service.QueryService import QueryService
+from .service.RiddleService import RiddleService
+from .service.TotalFeedbackService import TotalFeedbackService
+from .service.UserService import UserService
+from .service.RankingService import RankingService
+from .service.UserGameService import UserGameService
+from .service.GameQueryService import GameQueryService
 
 from sqlalchemy import text
+from typing import List, Dict
 
 from .config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
 from fastapi.staticfiles import StaticFiles
@@ -191,6 +192,50 @@ async def chat(request: Request):
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@app.get('/recentgames')
+async def reaccess(request: Request):
+    user_id = request.session.get('user_id')
+    games = ugService.get_recent_games(user_id)
+    recent_games = [{'gameId': game.game_id, 'gameTitle': game.title} for game in games]
+    return JSONResponse(content=recent_games)
+
+
+@app.get('/riddles')
+async def show_all_riddle():
+    riddles = riddleService.get_all_riddle()
+    all_riddles = [{'riddleId': riddle.riddle_id, 'riddleTitle': riddle.title} for riddle in riddles]
+    return JSONResponse(content=all_riddles)
+
+
+@app.post('/newgame')
+async def create_game(request: Request, riddleid: int = Query(...)):
+    user_id = request.session.get('user_id')
+    game_id = gameService.create_game(user_id, riddleid)
+    return JSONResponse(content={'newGameId': game_id})
+
+
+@app.get('/gameinfo')
+async def access_game(gameid: int = Query(...)):
+    gameService.reaccess(gameid)
+
+    game = gameService.get_game(gameid)
+    riddle = riddleService.get_riddle(game.riddle_id)
+    game_queries = gqService.get_queries(gameid)
+
+    game_info = [
+        {'gameTitle': game.title, 'problem': riddle.problem, 'progress': game.progress}
+    ]
+    for game_query in game_queries:
+        query = queryService.get_query(game_query.query_id)
+        game_info.append({
+            'queryId': query.query_id,
+            'query': query.query,
+            'response': query.response
+        })
+
+    return JSONResponse(content=game_info)
 
 
 @app.get('/logout')

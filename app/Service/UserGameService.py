@@ -15,7 +15,7 @@ class UserGameService:
         game_ids = [user_game.game_id for user_game in user_games]
         games = self.session.query(Game) \
             .filter(Game.game_id.in_(game_ids)) \
-            .order_by(asc(Game.updatedAt)) \
+            .order_by(desc(Game.updatedAt)) \
             .limit(20) \
             .all()
         return games

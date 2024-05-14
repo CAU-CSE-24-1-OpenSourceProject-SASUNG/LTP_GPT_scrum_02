@@ -11,7 +11,6 @@ Base = sqlalchemy.orm.declarative_base()
 Session = sessionmaker(bind=engine)
 session = Session()
 
-
 class User(Base):
     __tablename__ = 'users'
 
@@ -47,6 +46,7 @@ class Riddle(Base):
 
     riddle_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255))
+    problem = Column(String(255))
     title = Column(String(255))
     hit_ratio = Column(Float)
 
@@ -97,6 +97,7 @@ class Game(Base):
     createdAt = Column(DateTime)
     updatedAt = Column(DateTime)
     is_first = Column(Boolean)
+    progress = Column(Integer)
     query_count = Column(Integer)
     play_time = Column(Time)
     query_length = Column(Integer)

@@ -5,8 +5,8 @@ class RiddleService:
     def __init__(self, session):
         self.session = session
 
-    def create_riddle(self, name, title, hit_ratio):
-        riddle = Riddle(name=name, title=title, hit_ratio=hit_ratio)
+    def create_riddle(self, name, title, problem, hit_ratio):
+        riddle = Riddle(name=name, title=title, problem=problem, hit_ratio=hit_ratio)
         self.session.add(riddle)
         self.session.commit()
 
