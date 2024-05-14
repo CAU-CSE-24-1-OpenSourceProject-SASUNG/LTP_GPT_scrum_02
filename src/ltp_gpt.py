@@ -2,6 +2,7 @@ import openai
 import os
 import json
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
@@ -88,23 +89,45 @@ def evaluate_similarity(question):
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=similarity_message,
-        temperature=0.0,
+        temperature=0.4,
         top_p=0.5
     )
     ans = response.choices[0].message.content
+    
+    ####
     print(ans)
+    
+    #return ans
     myList = [False, False, False, False, False]
-    tfIndex = 0
-    for i in ans:
-        if i <= len(ans) - 4 and ans[i] == 'T' and ans[i+1] == 'r' and ans[i+2] == 'u' and ans[i+3] == 'e':
-            myList[tfIndex] = True
-            tfIndex = tfIndex + 1
-        elif i <= len(ans) - 5 and ans[i] == 'F' and ans[i+1] == 'a' and ans[i+2] == 'l' and ans[i+3] == 's' and ans[i+4] == 'e':
-            myList[tfIndex] = False
-            tfIndex = tfIndex + 1
-        if(tfIndex > 4):
-            break
+    myDictionary = {}
+    index_sharp = ans.find('#')
+    ans = ans[index_sharp:]
+    
+    ####
+    print(ans)
+    
+    TrueMatches = re.finditer("True", ans)
+    FalseMatches = re.finditer("False", ans)
+    
+    for match in TrueMatches:
+        myDictionary[match.start()] = True
+    for match in FalseMatches:
+        myDictionary[match.start()] = False
+    myDictionary = dict(sorted(myDictionary.items()))
+    
+    ####
+    print(myDictionary)
+
+
+    values = list(myDictionary.values())
+    for i in range (0,5):
+        myList[i] = values[i]
+    
+
+    ####
     print(myList)
+    
+
     if myList[4] == True:
         percent = "100%"
     elif myList[3] == True:

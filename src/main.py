@@ -19,7 +19,7 @@ async def chat(request: Request):
         response = ltp_gpt.evaluate_question(question)
         similarity = "0%"
         print(response)
-        if(response == '맞습니다.' or response == '그렇다고 볼 수 있습니다.'):
+        if(response == '맞습니다.' or response == '그렇다고 볼 수도 있습니다.') or response == '정답과 유사합니다.' or response == '정답입니다.':
             similarity = ltp_gpt.evaluate_similarity(question)
 
         print(similarity)
