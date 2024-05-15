@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware  # CORS
+
 from authlib.integrations.starlette_client import OAuth, OAuthError
 
 from .Init import session, engine
@@ -30,6 +32,20 @@ import secrets
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# CORS
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 oauth = OAuth()
 oauth.register(
@@ -56,15 +72,15 @@ rankingService = RankingService(session)
 ugService = UserGameService(session)
 gqService = GameQueryService(session)
 
-# DB 모든 데이터 삭제
-with engine.connect() as conn:
-    table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries', 'ranking']
-    # table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries']
-    conn.execute(text('SET FOREIGN_KEY_CHECKS = 0;'))  # 외래 키 제약 조건을 잠시 해제
-    for table_name in table_names:
-        delete_query = text('TRUNCATE TABLE {};'.format(table_name))
-        conn.execute(delete_query)
-    conn.execute(text('SET FOREIGN_KEY_CHECKS = 1;'))  # 외래 키 제약 조건을 다시 활성화
+## DB 모든 데이터 삭제
+#with engine.connect() as conn:
+#    table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries', 'ranking']
+#    # table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries']
+#    conn.execute(text('SET FOREIGN_KEY_CHECKS = 0;'))  # 외래 키 제약 조건을 잠시 해제
+#    for table_name in table_names:
+#        delete_query = text('TRUNCATE TABLE {};'.format(table_name))
+#        conn.execute(delete_query)
+#    conn.execute(text('SET FOREIGN_KEY_CHECKS = 1;'))  # 외래 키 제약 조건을 다시 활성화
 
 
 @app.get("/")
@@ -196,8 +212,11 @@ async def chat(request: Request):
 
 @app.get('/recentgames')
 async def reaccess(request: Request):
-    user_id = request.session.get('user_id')
-    games = ugService.get_recent_games(user_id)
+    #    user_id = request.session.get('user_id')
+#    games = ugService.get_recent_games(user_id)
+#    recent_games = [{'gameId': game.game_id, 'gameTitle': game.title} for game in games]
+#    return JSONResponse(content=recent_games)
+    games = gameService.get_all_game()
     recent_games = [{'gameId': game.game_id, 'gameTitle': game.title} for game in games]
     return JSONResponse(content=recent_games)
 
@@ -218,14 +237,14 @@ async def create_game(request: Request, riddleid: int = Query(...)):
 
 @app.get('/gameinfo')
 async def access_game(gameid: int = Query(...)):
-    gameService.reaccess(gameid)
+    #gameService.reaccess(gameid)
 
     game = gameService.get_game(gameid)
     riddle = riddleService.get_riddle(game.riddle_id)
     game_queries = gqService.get_queries(gameid)
 
     game_info = [
-        {'gameTitle': game.title, 'problem': riddle.problem, 'progress': game.progress}
+        {'gameTitle': game.title, 'problem': riddle.problem}
     ]
     for game_query in game_queries:
         query = queryService.get_query(game_query.query_id)
