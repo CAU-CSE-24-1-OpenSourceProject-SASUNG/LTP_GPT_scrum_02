@@ -87,12 +87,12 @@ def evaluate_similarity(question, prompting):
 
     sentences = prompting.split('$')
     num_sentence = len(sentences)
-    prompt_sentence = f"문장의 개수는 {num_sentence}개입니다. "
+    prompt_sentence = f"{num_sentence}개의 문장이 있습니다. "
 
     for i in range(num_sentence):
         prompt_sentence += f"{i + 1}번째 문장입니다: ({sentences[i]}) "
     
-        similarity_message = similarity_messages + [{"role": "system", "content": prompt_sentence}, {"role": "user", "content": question}]
+        similarity_message = [{"role": "system", "content": prompt_sentence}] + similarity_messages + [{"role": "user", "content": question}]
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=similarity_message,
@@ -107,7 +107,7 @@ def evaluate_similarity(question, prompting):
     print()
     
     #return ans
-    myList = [False, False, False, False, False]
+    myList = []
     myDictionary = {}
     index_sharp = ans.find('#')
     ans = ans[index_sharp:]
@@ -132,8 +132,8 @@ def evaluate_similarity(question, prompting):
     print()
 
     values = list(myDictionary.values())
-    for i in range (0,5):
-        myList[i] = values[i]
+    for i in range (len(values)):
+        myList.append(values[i])
     
 
     ####
@@ -141,19 +141,13 @@ def evaluate_similarity(question, prompting):
     print(myList)
     print() 
 
-    if myList[4] == True:
-        percent = "100%"
-    elif myList[3] == True:
-        percent = "80%"
-    elif myList[2] == True:
-        percent = "60%"
-    elif myList[1] == True:
-        percent = "40%"
-    elif myList[0] == True:
-        percent = "20%"
-    else:
-        percent = "0%"
-    return percent
+    percent = 100
+    for i in range(len(myList), -1, -1):
+        if(myList[i] == True):
+            return str(percent) + "%"
+        percent -= int((100 / lem(myList)))
+    return str(percent) + "%"
+
 
 def is_neutral(question):
     neutral_keywords = ['힌트', '정답', '설명']
