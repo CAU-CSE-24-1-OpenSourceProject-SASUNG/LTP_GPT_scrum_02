@@ -19,4 +19,3 @@ class Game(Base):
     hit = Column(Boolean)
 
     riddle = relationship('Riddle')
-

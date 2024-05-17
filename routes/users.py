@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from auth.jwt import create_access_token
 from database.connection import get_session
-from models.users import User, TokenResponse
-
+from app.Init import User
 
 user_router = APIRouter(
 	tags=["User"],
@@ -10,7 +9,7 @@ user_router = APIRouter(
 
 # Response를 TokenResponse 모델로 지정
 @user_router.post("/login", response_model=TokenResponse)
-async def login(body: User,session=Depends(get_session)) -> dict:
+async def login(body: User, session=Depends(get_session)) -> dict:
 	# 로그인 유저가 DB에 있는지 검사한뒤
 	existing_user = session.get(User , body.email)
 	try:

@@ -10,6 +10,15 @@ class UserGameService:
         self.session.add(user_game)
         self.session.commit()
 
+    def get_recent_game(self, user_id):
+        user_games = self.session.query(User_Game).filter_by(user_id=user_id).all()
+        game_ids = [user_game.game_id for user_game in user_games]
+        game = self.session.query(Game) \
+            .filter(Game.game_id.in_(game_ids)) \
+            .order_by(desc(Game.updatedAt)) \
+            .first()
+        return game
+
     def get_recent_games(self, user_id):
         user_games = self.session.query(User_Game).filter_by(user_id=user_id).all()
         game_ids = [user_game.game_id for user_game in user_games]

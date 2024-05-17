@@ -9,4 +9,3 @@ class Feedback(Base):
     feedback_id = Column(Integer, primary_key=True, autoincrement=True)
     query_id = Column(Integer, ForeignKey('queries.query_id'))
     content = Column(String(255))
-

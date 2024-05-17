@@ -1,5 +1,6 @@
-from app.Init import *
 import datetime
+
+from app.Init import *
 
 
 class QueryService:
