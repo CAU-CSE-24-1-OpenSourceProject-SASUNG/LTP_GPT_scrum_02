@@ -81,7 +81,7 @@ def evaluate_question(question):
                     )
             return response.choices[0].message.content
 
-gpt_similarity = load_data('./puzzles/GPT_similarity_umbrella.json') # GPT 유사도 검증
+gpt_similarity = load_data('./puzzles/gpt_similarity') # GPT 유사도 검증
 similarity_messages = gpt_similarity['gpt_similarity']
 def evaluate_similarity(question, prompting):
 
