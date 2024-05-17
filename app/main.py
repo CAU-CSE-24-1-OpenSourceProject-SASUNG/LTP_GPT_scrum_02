@@ -11,7 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
-#from fastapi.middleware.cors import CORSMiddleware  # CORS
+from fastapi.middleware.cors import CORSMiddleware  # CORS
 
 import app.ltp_gpt as ltp_gpt
 from .Init import session, engine
@@ -27,11 +27,10 @@ from .service.UserService import UserService
 from .service.UserGameService import UserGameService
 
 from sqlalchemy import text
-from typing import List, Dict
 
 #google login
-from database.connection import conn
-from routes.users import user_router
+from auth.jwt import create_access_token
+from auth.authenticate import authenticate
 
 from .config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
 from fastapi.staticfiles import StaticFiles
@@ -42,21 +41,19 @@ app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(user_router, prefix="/user")
+# CORS
+origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+        ]
 
-## CORS
-#origins = [
-#    "http://localhost:3000",
-#    "http://127.0.0.1:3000"
-#]
-#
-#app.add_middleware(
-#    CORSMiddleware,
-#    allow_origins=origins,
-#    allow_credentials=True,
-#    allow_methods=["*"],
-#    allow_headers=["*"],
-#)
+app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        )
 
 templates = Jinja2Templates(directory="templates")
 
@@ -80,24 +77,57 @@ gqService = GameQueryService(session)
 #        conn.execute(delete_query)
 #    conn.execute(text('SET FOREIGN_KEY_CHECKS = 1;'))  # 외래 키 제약 조건을 다시 활성화
 
-riddleService.create_riddle('Umbrella', '아이는 10층에 산다',
-                            '어떤 아이가 아파트 10층에 살고 있으며, 맑은 날에는 엘리베이터에서 6층에서 내려서 10층까지 걸어 올라간다. 그러나 날씨가 좋지 않다면 10층에서 내려서 집으로 간다. 어떤 상황일까?',
-                            0)
+#riddleService.create_riddle('Umbrella', '아이는 10층에 산다',
+#                            '어떤 아이가 아파트 10층에 살고 있으며, 맑은 날에는 엘리베이터에서 6층에서 내려서 10층까지 걸어 올라간다. 그러나 날씨가 좋지 않다면 10층에서 내려서 집으로 간다. 어떤 상황일까?',
+#                            0)
+
+
+from pydantic import BaseModel
+
+class User(BaseModel):
+    name: str
+    email: str
+
+@app.post("/user/login")
+async def login(user: User):
+    # 로그인 유저가 DB에 있는지 검사한뒤
+#    print(user.email)
+#    print(user.name)
+    existing_user = userService.get_user_email(user.email)
+    try:
+        # 있다면 토큰을 발행하고 리턴
+        if existing_user:
+            access_token = create_access_token(user.email)
+        else:
+            # 없다면 DB에 저장하고 리턴
+            userService.create_user(user.email, user.name)
+            access_token = create_access_token(user.email)
+
+        return JSONResponse(content={ "access_token": access_token, "token_type": "Bearer"})
+    except Exception as e:
+        print(e)
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
+
+class QueryInfo(BaseModel):
+    game_id: str
+    query: str
 
 
 @app.post("/chat")
-async def chat(request: Request):
+async def chat(request: Request, queryInfo: QueryInfo):
     try:
-        body = await request.json()
-        question = body.get("question")
-        user_id = request.session.get('user_id')
-        game_id = request.session.get('game_id')
-        riddle_id = request.session.get('riddle_id')
-
-        response = queryService.get_response(question, riddle_id)  # 메모이제이션
-        if not response:
-            response = ltp_gpt.evaluate_question(question)
-        query_id = queryService.create_query(question, response)
+        token = get_token_from_header(request)
+        user_email = await authenticate(token)
+        user_id = userService.get_user_email(user_email)
+        query = queryInfo.query
+        game_id = queryInfo.game_id
+        riddle_id = gameService.get_game(game_id).riddle_id
+#       response = queryService.get_response(query, riddle_id)  # 메모이제이션
+#        if not response:
+#            response = ltp_gpt.evaluate_question(query)
+        response = ltp_gpt.evaluate_question(query)
+        query_id = queryService.create_query(query, response)
         gqService.create_game_query(game_id, query_id)
 
         game = gameService.get_game(game_id)
@@ -134,7 +164,9 @@ async def chat(request: Request):
 
 @app.get('/recentgames')
 async def lookup(request: Request):
-    user_id = request.session.get('user_id')
+    token = get_token_from_header(request)
+    user_email = await authenticate(token)
+    user_id = userService.get_user_email(user_email)
     games = ugService.get_recent_games(user_id)
     recent_games = [{'gameId': game.game_id, 'gameTitle': game.title} for game in games]
     return JSONResponse(content=recent_games)
@@ -142,22 +174,45 @@ async def lookup(request: Request):
 
 @app.get('/recentgame')
 async def access(request: Request):
-    user_id = request.session.get('user_id')
+    token = get_token_from_header(request)
+    user_email = await authenticate(token)
+    user_id = userService.get_user_email(user_email)
     game = ugService.get_recent_game(user_id)
     gameService.reaccess(game.game_id)
     return JSONResponse(content={'gameId': game.game_id})
 
 
-@app.get('/riddles')
-async def show_all_riddle():
-    return JSONResponse(content=riddle_items)
+def get_token_from_header(request: Request) -> str:
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Authorization header is missing")
 
+    try:
+        scheme, token = auth_header.split()
+        if scheme.lower() != 'bearer':
+            raise HTTPException(status_code=401, detail="Authorization header must start with Bearer")
+        return token
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid Authorization header format")
+
+@app.get('/riddles')
+async def show_all_riddle(request: Request):
+    token = get_token_from_header(request)
+    await authenticate(token)
+    riddles = riddleService.get_all_riddle()
+    all_riddles = [{'riddleId' : riddle.riddle_id, 'riddleTitle': riddle.title} for riddle in riddles]
+    return JSONResponse(content=all_riddles)
 
 @app.post('/newgame')
-async def create_game(request: Request, riddleid: int = Query(...)):
+async def create_game(request: Request):
     try:
-        user_id = request.session.get('user_id')
-        game_id = gameService.create_game(user_id, riddleid)
+        body = await request.json()
+        riddle_id = body.get("riddleId")
+        token = get_token_from_header(request)
+        user_email = await authenticate(token)
+        user = userService.get_user_email(user_email)
+        game_id = gameService.create_game(user.user_id, riddle_id)
+        print(game_id)
         return JSONResponse(content={'newGameId': game_id})
     except Exception as e:
         print(str(e))
@@ -165,24 +220,26 @@ async def create_game(request: Request, riddleid: int = Query(...)):
 
 
 @app.get('/gameinfo')
-async def access_game(gameid: int = Query(...)):
+async def access_game(request: Request, gameid: str = Query(...)):
     try:
-        gameService.reaccess(gameid)
+        token = get_token_from_header(request)
 
+        #인증
+        user_email = await authenticate(token)
+        user = userService.get_user_email(user_email)
+
+        gameService.reaccess(gameid)
         game = gameService.get_game(gameid)
         riddle = riddleService.get_riddle(game.riddle_id)
         game_queries = gqService.get_queries(gameid)
-
-        game_info = [
-            {'gameTitle': game.title, 'problem': riddle.problem, 'progress': game.progress}
-        ]
+        game_info = [{'gameTitle': game.title, 'problem': riddle.problem}]
         for game_query in game_queries:
             query = queryService.get_query(game_query.query_id)
             game_info.append({
                 'queryId': query.query_id,
                 'query': query.query,
                 'response': query.response
-            })
+                })
         return JSONResponse(content=game_info)
     except Exception as e:
         print(str(e))

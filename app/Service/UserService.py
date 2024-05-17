@@ -5,8 +5,8 @@ class UserService:
     def __init__(self, session):
         self.session = session
 
-    def create_user(self, gmail, name, expire):
-        user = User(gmail=gmail, name=name, expire=expire, experience=0)
+    def create_user(self, gmail, name):
+        user = User(gmail=gmail, name=name, experience=0)
         self.session.add(user)
         self.session.commit()
 
