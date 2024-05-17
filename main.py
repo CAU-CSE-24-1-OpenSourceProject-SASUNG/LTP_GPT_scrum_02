@@ -1,5 +1,4 @@
 import uvicorn
-from pydantic_settings import BaseSettings
 
 if __name__ == "__main__":
     uvicorn.run(

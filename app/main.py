@@ -4,7 +4,6 @@ import secrets
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 from starlette.middleware.sessions import SessionMiddleware
@@ -29,17 +28,15 @@ from .service.UserGameService import UserGameService
 from sqlalchemy import text
 
 #google login
-from auth.jwt import create_access_token
-from auth.authenticate import authenticate
+from .auth.jwt import create_access_token
+from .auth.authenticate import authenticate
 
 from .config import CLIENT_ID, CLIENT_SECRET, SECRET_KEY
-from fastapi.staticfiles import StaticFiles
 import app.ltp_gpt as ltp_gpt
 import secrets
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # CORS
 origins = [
@@ -212,7 +209,6 @@ async def create_game(request: Request):
         user_email = await authenticate(token)
         user = userService.get_user_email(user_email)
         game_id = gameService.create_game(user.user_id, riddle_id)
-        print(game_id)
         return JSONResponse(content={'newGameId': game_id})
     except Exception as e:
         print(str(e))
@@ -223,8 +219,6 @@ async def create_game(request: Request):
 async def access_game(request: Request, gameid: str = Query(...)):
     try:
         token = get_token_from_header(request)
-
-        #인증
         user_email = await authenticate(token)
         user = userService.get_user_email(user_email)
 
