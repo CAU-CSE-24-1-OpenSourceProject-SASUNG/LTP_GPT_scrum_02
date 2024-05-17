@@ -15,9 +15,9 @@ def load_data(json_file):
     return data
 
 # JSON 파일 경로
-umbrella_data = load_data('./puzzles/umbrella.json')  # Umbrella 임베딩 / 프롬프팅
-listenling_data = load_data('./puzzles/listening.json') #  listening 임베딩 / 프롬프팅
-gpt_data = load_data('./puzzles/GPT_answer.json') # GPT 대답 말투 프롬프팅
+umbrella_data = load_data('./app/puzzles/umbrella.json')  # Umbrella 임베딩 / 프롬프팅
+listenling_data = load_data('./app/puzzles/listening.json') #  listening 임베딩 / 프롬프팅
+gpt_data = load_data('./app/puzzles/GPT_answer.json') # GPT 대답 말투 프롬프팅
 
 # 임베딩 string 가져오기
 problem = umbrella_data['problem']
@@ -82,7 +82,7 @@ def evaluate_question(question):
             return response.choices[0].message.content
 
 # 2차 프롬프팅
-gpt_similarity = load_data('./puzzles/gpt_similarity') # GPT 유사도 검증
+gpt_similarity = load_data('./app/puzzles/gpt_similarity.json') # GPT 유사도 검증
 similarity_messages = gpt_similarity['gpt_similarity']
 def evaluate_similarity(question, prompting):
 

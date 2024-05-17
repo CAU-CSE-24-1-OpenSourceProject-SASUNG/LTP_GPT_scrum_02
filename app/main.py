@@ -175,9 +175,11 @@ async def chat(request: Request, queryInfo: QueryInfo):
 async def lookup(request: Request):
     token = get_token_from_header(request)
     user_email = await authenticate(token)
-    user_id = userService.get_user_email(user_email)
-    games = ugService.get_recent_games(user_id)
+    print(user_email)
+    user = userService.get_user_email(user_email)
+    games = ugService.get_recent_games(user.user_id)
     recent_games = [{'gameId': game.game_id, 'gameTitle': game.title} for game in games]
+    print(recent_games)
     return JSONResponse(content=recent_games)
 
 
@@ -185,8 +187,8 @@ async def lookup(request: Request):
 async def access(request: Request):
     token = get_token_from_header(request)
     user_email = await authenticate(token)
-    user_id = userService.get_user_email(user_email)
-    game = ugService.get_recent_game(user_id)
+    user = userService.get_user_email(user_email)
+    game = ugService.get_recent_game(user.user_id)
     gameService.reaccess(game.game_id)
     return JSONResponse(content={'gameId': game.game_id})
 
@@ -221,6 +223,8 @@ async def create_game(request: Request):
         user_email = await authenticate(token)
         user = userService.get_user_email(user_email)
         game_id = gameService.create_game(user.user_id, riddle_id)
+        # user id - game_id 관계 설정
+        ugService.create_user_game(user.user_id, game_id)
         return JSONResponse(content={'newGameId': game_id})
     except Exception as e:
         print(str(e))
