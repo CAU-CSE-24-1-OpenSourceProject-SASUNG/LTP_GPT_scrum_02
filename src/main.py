@@ -32,7 +32,10 @@ async def similarity(request: Request):
     try:
         body = await request.json()
         question = body.get("question")
-        response = ltp_gpt.evaluate_question(question)
+        # 추가된 부분
+        prompt_sentence = body.get("prompting")
+
+        response = ltp_gpt.evaluate_question(question, prompt_sentence)
 
         print(response)
         return JSONResponse(content={"response": response})

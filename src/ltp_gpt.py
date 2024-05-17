@@ -83,14 +83,22 @@ def evaluate_question(question):
 
 gpt_similarity = load_data('./puzzles/GPT_similarity_umbrella.json') # GPT 유사도 검증
 similarity_messages = gpt_similarity['gpt_similarity']
-def evaluate_similarity(question):
-    similarity_message = similarity_messages + [{"role": "user", "content": question}]
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=similarity_message,
-        temperature=0.0,
-        top_p=0.5
-    )
+def evaluate_similarity(question, prompting):
+
+    sentences = prompting.split('$')
+    num_sentence = len(sentences)
+    prompt_sentence = f"문장의 개수는 {num_sentence}개입니다. "
+
+    for i in range(num_sentence):
+        prompt_sentence += f"{i + 1}번째 문장입니다: ({sentences[i]}) "
+    
+        similarity_message = similarity_messages + [{"role": "system", "content": prompt_sentence}, {"role": "user", "content": question}]
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=similarity_message,
+            temperature=0.0,
+            top_p=0.5
+        )
     ans = response.choices[0].message.content
     
     ####
