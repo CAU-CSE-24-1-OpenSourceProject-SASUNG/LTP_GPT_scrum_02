@@ -124,9 +124,21 @@ async def chat(request: Request, queryInfo: QueryInfo):
 #        if not response:
 #            response = ltp_gpt.evaluate_question(query)
         response = ltp_gpt.evaluate_question(query)
+
+        similarity = "0%"
+        print(response)
+
+        # 2차
+#        if(response == '맞습니다.' or response == '그렇다고 볼 수도 있습니다.') or response == '정답과 유사합니다.' or response == '정확한 정답을 맞추셨습니다.':
+#            similarity = ltp_gpt.evaluate_similarity(question)
+
+        # 쿼리 id 할당
         query_id = queryService.create_query(query, response)
+        # game_id - query_id 연결
         gqService.create_game_query(game_id, query_id)
 
+
+        # 랭킹과 정답 등의 처리
         game = gameService.get_game(game_id)
         if game.is_first is True:  # 동일 게임에 대해 최초의 정답만 데이터, 랭킹 업데이트
             if "정답" in response:  # 정답이면 game을 종료 -> 정답을 맞춘 것을 어떻게 판단?
