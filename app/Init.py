@@ -1,3 +1,5 @@
+import uuid
+
 import sqlalchemy
 from sqlalchemy import *
 from sqlalchemy.orm import relationship, sessionmaker
@@ -11,10 +13,11 @@ Base = sqlalchemy.orm.declarative_base()
 Session = sessionmaker(bind=engine)
 session = Session()
 
+
 class User(Base):
     __tablename__ = 'users'
 
-    user_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     gmail = Column(String(255), primary_key=True)
     name = Column(String(255))
     experience = Column(Integer)
@@ -25,9 +28,9 @@ class User(Base):
 class User_Game(Base):
     __tablename__ = 'user_games'
 
-    ug_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
-    game_id = Column(Integer, ForeignKey('games.game_id'))
+    ug_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey('users.user_id'))
+    game_id = Column(String(36), ForeignKey('games.game_id'))
 
     user = relationship("User")
     game = relationship("Game", uselist=False)
@@ -36,15 +39,15 @@ class User_Game(Base):
 class Total_Feedback(Base):
     __tablename__ = "total_feedbacks"
 
-    total_feedback_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    total_feedback_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey('users.user_id'))
     content = Column(String(255))
 
 
 class Riddle(Base):
     __tablename__ = 'riddles'
 
-    riddle_id = Column(Integer, primary_key=True, autoincrement=True)
+    riddle_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255))
     problem = Column(String(255))
     title = Column(String(255))
@@ -54,10 +57,10 @@ class Riddle(Base):
 class Ranking(Base):
     __tablename__ = 'ranking'
 
-    rank_id = Column(Integer, primary_key=True, autoincrement=True)
-    riddle_id = Column(Integer, ForeignKey('riddles.riddle_id'))
+    rank_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    riddle_id = Column(String(36), ForeignKey('riddles.riddle_id'))
     rank = Column(Integer)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_id = Column(String(36), ForeignKey('users.user_id'))
     user_name = Column(String(255))
     play_time = Column(Time)
 
@@ -68,7 +71,7 @@ class Ranking(Base):
 class Query(Base):
     __tablename__ = "queries"
 
-    query_id = Column(Integer, primary_key=True, autoincrement=True)
+    query_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     query = Column(String(255))
     response = Column(String(255))
     createdAt = Column(DateTime)
@@ -80,9 +83,9 @@ class Query(Base):
 class Game_Query(Base):
     __tablename__ = "game_queries"
 
-    gq_id = Column(Integer, primary_key=True, autoincrement=True)
-    game_id = Column(Integer, ForeignKey('games.game_id'))
-    query_id = Column(Integer, ForeignKey('queries.query_id'))
+    gq_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    game_id = Column(String(36), ForeignKey('games.game_id'))
+    query_id = Column(String(36), ForeignKey('queries.query_id'))
 
     game = relationship('Game')
     query = relationship('Query', uselist=False)
@@ -91,14 +94,15 @@ class Game_Query(Base):
 class Game(Base):
     __tablename__ = 'games'
 
-    game_id = Column(Integer, primary_key=True, autoincrement=True)
-    riddle_id = Column(Integer, ForeignKey('riddles.riddle_id'))
+    game_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    riddle_id = Column(String(36), ForeignKey('riddles.riddle_id'))
     title = Column(String(255))
     createdAt = Column(DateTime)
     updatedAt = Column(DateTime)
     is_first = Column(Boolean)
     progress = Column(Integer)
     query_count = Column(Integer)
+    correct_time = Column(Time)
     play_time = Column(Time)
     query_length = Column(Integer)
     hit = Column(Boolean)
@@ -109,8 +113,8 @@ class Game(Base):
 class Feedback(Base):
     __tablename__ = "feedbacks"
 
-    feedback_id = Column(Integer, primary_key=True, autoincrement=True)
-    query_id = Column(Integer, ForeignKey('queries.query_id'))
+    feedback_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    query_id = Column(String(36), ForeignKey('queries.query_id'))
     content = Column(String(255))
 
 

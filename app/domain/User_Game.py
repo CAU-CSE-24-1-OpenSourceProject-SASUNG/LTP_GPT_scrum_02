@@ -13,4 +13,3 @@ class User_Game(Base):
 
     user = relationship("User")
     game = relationship("Game", uselist=False)
-

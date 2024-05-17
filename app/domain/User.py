@@ -12,4 +12,3 @@ class User(Base):
     experience = Column(Integer)
 
     total_feedback = relationship("Total_Feedback", uselist=False)
-

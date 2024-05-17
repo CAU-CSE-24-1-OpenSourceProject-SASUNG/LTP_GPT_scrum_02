@@ -14,5 +14,3 @@ class Query(Base):
     is_correct = Column(Boolean)
 
     feedback = relationship('Feedback', uselist=False)
-
-

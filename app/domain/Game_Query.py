@@ -13,5 +13,3 @@ class Game_Query(Base):
 
     game = relationship('Game')
     query = relationship('Query', uselist=False)
-
-

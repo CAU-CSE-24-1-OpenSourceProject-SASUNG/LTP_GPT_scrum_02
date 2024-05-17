@@ -11,4 +11,3 @@ class Riddle(Base):
     title = Column(String(255))
     problem = Column(String(255))
     hit_ratio = Column(Float)
-

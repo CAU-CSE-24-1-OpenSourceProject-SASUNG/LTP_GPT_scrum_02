@@ -16,5 +16,3 @@ class Ranking(Base):
 
     user = relationship('User')
     riddle = relationship('Riddle')
-
-
