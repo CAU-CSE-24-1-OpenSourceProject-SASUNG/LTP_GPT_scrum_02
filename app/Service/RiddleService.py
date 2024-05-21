@@ -5,10 +5,10 @@ class RiddleService:
     def __init__(self, session):
         self.session = session
 
-    def create_riddle(self, creater, title, problem, situation, answer, progress_sentences, hit_ratio):
+    def create_riddle(self, creater, title, problem, situation, answer, progress_sentences):
         progress_sentence = '$'.join(progress_sentences)
         riddle = Riddle(creater=creater, title=title, problem=problem, situation=situation, answer=answer,
-                        progress_sentences=progress_sentence, hit_ratio=hit_ratio, point_1=0, point_2=0, point_3=0,
+                        progress_sentences=progress_sentence, hit_ratio=0, point_1=0, point_2=0, point_3=0,
                         point_4=0, point_5=0)
         self.session.add(riddle)
         self.session.commit()

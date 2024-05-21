@@ -71,7 +71,7 @@ rpService = RiddlePromptingService(session)
 #                            '어떤 아이가 아파트 10층에 살고 있으며, 맑은 날에는 엘리베이터에서 6층에서 내려서 10층까지 걸어 올라간다. 그러나 날씨가 좋지 않다면 10층에서 내려서 집으로 간다. 어떤 상황일까?',
 #                            0)
 
-
+# 로그인
 @app.post("/user/login")
 async def login(user: UserDto):
     # 로그인 유저가 DB에 있는지 검사한뒤
@@ -91,6 +91,7 @@ async def login(user: UserDto):
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
 
+# 채팅(질문)
 @app.post("/chat")
 async def chat(request: Request, queryInfo: QueryInfoDto):
     try:
@@ -101,25 +102,25 @@ async def chat(request: Request, queryInfo: QueryInfoDto):
         game_id = queryInfo.game_id
         riddle_id = gameService.get_game(game_id).riddle_id
         riddle = riddleService.get_riddle(riddle_id)
-
-        if gqService.is_full(game_id) is False:  # query 개수 제한
+        game = gameService.get_game(game_id)
+        if game.query_ticket > 0:  # query 개수 제한
             # response = queryService.get_response(query, riddle_id)  # 메모이제이션
             #  if not response:
             #      response = ltp_gpt.evaluate_question(query)
             # 1차 프롬프팅
             response = ltp_gpt.evaluate_question(query, riddle)
-            query_id = queryService.create_query(query, response)   # query 생성
-            gqService.create_game_query(game_id, query_id)  # game_query 생성
+            query_id = queryService.create_query(query, response)  # query 생성
+            gqService.create_game_query(game_id, query_id)  # game_query 생성 : query ticket -= 1
             # 2차 프롬프팅
             if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
                 similarity = ltp_gpt.evaluate_similarity(query, riddle)
                 gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
             game = gameService.get_game(game_id)
             # Game 데이터 업데이트 : 정답을 맞췄을 때만
-            gameService.correct_game(user_id, game, request.session.get('game_start_time'), False, True)
+            gameService.correct_game(user_id, game, request.session.get('game_start_time'))
             return JSONResponse(content={"response": response})
         else:
-            return JSONResponse(content={"response": "Query Full Error"})
+            return JSONResponse(content={'error': "Failed to create query"}, status_code=400)
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=500)
@@ -166,9 +167,13 @@ async def create_game(request: Request):
         token = get_token_from_header(request)
         user_email = await authenticate(token)
         user = userService.get_user_email(user_email)
-        game_id = gameService.create_game(user.user_id, riddle_id)  # game 생성
-        ugService.create_user_game(user.user_id, game_id)   # user_game 생성
-        return JSONResponse(content={'newGameId': game_id})
+
+        if userService.create_game(user.user_id) is True:
+            game_id = gameService.create_game(user.user_id, riddle_id)  # game 생성
+            ugService.create_user_game(user.user_id, game_id)  # user_game 생성
+            return JSONResponse(content={'newGameId': game_id})
+        else:
+            return JSONResponse(content={'error': "Failed to create game"}, status_code=400)
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=404)
@@ -180,6 +185,7 @@ async def create_riddle(request: Request):
     try:
         token = get_token_from_header(request)
         user_email = await authenticate(token)
+        user = userService.get_user_email(user_email)
         body = await request.json()
         riddleTitle = body.get('riddleTitle')
         problem = body.get('problem')
@@ -188,10 +194,12 @@ async def create_riddle(request: Request):
         progress_sentences = body.get('progressSentences')
         exQueryResponse = body.get('exQueryResponse')
 
-        riddle_id = riddleService.create_riddle(user_email, riddleTitle, problem, situation, answer,
-                                                progress_sentences, 0)
-        rpService.create_riddle_prompting(riddle_id, exQueryResponse)
-        return JSONResponse(content={'riddleId': riddle_id})
+        if userService.create_riddle(user.user_id) is True:
+            riddle_id = riddleService.create_riddle(user_email, riddleTitle, problem, situation, answer, progress_sentences)
+            rpService.create_riddle_prompting(riddle_id, exQueryResponse)
+            return JSONResponse(content={'error': "Failed to create riddle"}, status_code=400)
+        else:
+            return JSONResponse(content={'riddleId': "Riddle Token Error"})
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=404)
@@ -214,13 +222,13 @@ async def progress(request: Request):
 @app.get('/gameinfo')
 async def access_game(request: Request, gameId: str = Query(...)):
     try:
-        gameService.reaccess(gameId)  # 재접속
         token = get_token_from_header(request)
         user_email = await authenticate(token)
         user = userService.get_user_email(user_email)
         game = gameService.get_game(gameId)
         riddle = riddleService.get_riddle(game.riddle_id)
         game_queries = gqService.get_queries(gameId)
+        gameService.reaccess(gameId)  # 재접속
         game_info = [{'gameTitle': game.title, 'problem': riddle.problem}]
         for game_query in game_queries:
             query = queryService.get_query(game_query.query_id)

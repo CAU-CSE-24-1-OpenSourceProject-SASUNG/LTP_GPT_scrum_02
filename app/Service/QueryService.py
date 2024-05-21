@@ -8,8 +8,7 @@ class QueryService:
         self.session = session
 
     def create_query(self, query, response, is_correct=False):
-        time = datetime.datetime.now()
-        query = Query(query=query, response=response, createdAt=time, is_correct=is_correct)
+        query = Query(query=query, response=response, createdAt=datetime.datetime.now(), is_correct=is_correct)
 
         self.session.add(query)
         self.session.commit()

@@ -9,7 +9,7 @@ class GameService:
     def __init__(self, session):
         self.session = session
 
-    def create_game(self, user_id, riddle_id, is_first=True, progress=0, query_count=0, correct_time=0, play_time=0,
+    def create_game(self, user_id, riddle_id, is_first=True, progress=0, query_ticket=30, correct_time=0, play_time=0,
                     query_length=0,
                     hit=False):
         count = 1
@@ -21,7 +21,7 @@ class GameService:
         createdAt = datetime.datetime.now()
         updatedAt = datetime.datetime.now()
         game = Game(riddle_id=riddle_id, title=title, createdAt=createdAt, updatedAt=updatedAt, is_first=is_first,
-                    progress=progress, query_count=query_count, correct_time=correct_time, play_time=play_time,
+                    progress=progress, query_ticket=query_ticket, correct_time=correct_time, play_time=play_time,
                     query_length=query_length, hit=hit)
         self.session.add(game)
         self.session.commit()
@@ -47,7 +47,7 @@ class GameService:
         game.updatedAt = datetime.datetime.now()
 
     # 게임에서 정답을 맞췄을 때
-    def correct_game(self, user_id, game, game_start_time_str, is_first, hit):
+    def correct_game(self, user_id, game, game_start_time_str):
         if game.is_first is True and game.progress == 100:
             game_start_time = datetime.datetime.strptime(game_start_time_str, "%Y-%m-%d %H:%M:%S")
             game_correct_time = datetime.datetime.now()
@@ -57,17 +57,14 @@ class GameService:
                 query_length = 0
                 for game_query in game_queries:
                     query_length += len(game_query.query.query)
-                query_count = len(game_queries)
-                game.query_count = query_count
                 game.query_length = query_length
                 game.correct_time = correct_time
-                game.is_first = is_first
-                game.hit = hit
+                game.is_first = False
+                game.hit = True
                 self.session.commit()
                 updated_game = self.session.query(Game).get(game.game_id)
                 rankingService.update_ranking(updated_game)  # 랭킹 업데이트
                 userService.level_up(user_id)  # 경험치 증가
-
 
     # 게임에서 나갔을 때
     def end_game(self, game_id, play_time):
@@ -77,8 +74,6 @@ class GameService:
             query_length = 0
             for game_query in game_queries:
                 query_length += len(game_query.query.query)
-            query_count = len(game_queries)
-            game.query_count = query_count
             game.query_length = query_length
             game.play_time += play_time
         self.session.commit()

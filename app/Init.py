@@ -21,6 +21,8 @@ class User(Base):
     gmail = Column(String(255), primary_key=True)
     name = Column(String(255))
     experience = Column(Integer)
+    riddle_ticket = Column(Integer)
+    game_ticket = Column(Integer)
 
 
 class User_Game(Base):
@@ -120,7 +122,7 @@ class Game(Base):
     updatedAt = Column(DateTime)
     is_first = Column(Boolean)
     progress = Column(Integer)
-    query_count = Column(Integer)
+    query_ticket = Column(Integer)
     correct_time = Column(Time)
     play_time = Column(Time)
     query_length = Column(Integer)

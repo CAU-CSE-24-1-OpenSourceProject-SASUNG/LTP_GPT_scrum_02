@@ -6,7 +6,7 @@ class UserService:
         self.session = session
 
     def create_user(self, gmail, name):
-        user = User(gmail=gmail, name=name, experience=0)
+        user = User(gmail=gmail, name=name, experience=0, riddle_ticket=3, game_ticket=40)
         self.session.add(user)
         self.session.commit()
 
@@ -20,6 +20,24 @@ class UserService:
 
     def get_all_user(self):
         return self.session.query(User).all()
+
+    def create_riddle(self, user_id):
+        user = self.session.query(User).filter_by(user_id=user_id).first()
+        if user.riddle_ticket > 0:
+            user.riddle_ticket -= 1
+            self.session.commit()
+            return True
+        else:
+            return False
+
+    def create_game(self, user_id):
+        user = self.session.query(User).filter_by(user_id=user_id).first()
+        if user.game_ticket > 0:
+            user.game_ticket -= 1
+            self.session.commit()
+            return True
+        else:
+            return False
 
     def level_up(self, user_id):
         user = self.get_user(user_id)
