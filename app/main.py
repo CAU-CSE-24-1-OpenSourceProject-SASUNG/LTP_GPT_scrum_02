@@ -3,6 +3,7 @@ import datetime
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware  # CORS
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import text
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -58,20 +59,16 @@ ugService = UserGameService(session)
 gqService = GameQueryService(session)
 rpService = RiddlePromptingService(session)
 
+# DB 모든 데이터 삭제
+with engine.connect() as conn:
+    table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries', 'ranking']
+    # table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries']
+    conn.execute(text('SET FOREIGN_KEY_CHECKS = 0;'))  # 외래 키 제약 조건을 잠시 해제
+    for table_name in table_names:
+        delete_query = text('TRUNCATE TABLE {};'.format(table_name))
+        conn.execute(delete_query)
+    conn.execute(text('SET FOREIGN_KEY_CHECKS = 1;'))  # 외래 키 제약 조건을 다시 활성화
 
-## DB 모든 데이터 삭제
-# with engine.connect() as conn:
-#    table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries', 'ranking']
-#    # table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries']
-#    conn.execute(text('SET FOREIGN_KEY_CHECKS = 0;'))  # 외래 키 제약 조건을 잠시 해제
-#    for table_name in table_names:
-#        delete_query = text('TRUNCATE TABLE {};'.format(table_name))
-#        conn.execute(delete_query)
-#    conn.execute(text('SET FOREIGN_KEY_CHECKS = 1;'))  # 외래 키 제약 조건을 다시 활성화
-
-# riddleService.create_riddle('Umbrella', '아이는 10층에 산다',
-#                            '어떤 아이가 아파트 10층에 살고 있으며, 맑은 날에는 엘리베이터에서 6층에서 내려서 10층까지 걸어 올라간다. 그러나 날씨가 좋지 않다면 10층에서 내려서 집으로 간다. 어떤 상황일까?',
-#                            0)
 
 # 로그인
 @app.post("/user/login")
@@ -118,7 +115,8 @@ async def chat(request: Request, queryInfo: QueryInfoDto):
                 if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
                     similarity = ltp_gpt.evaluate_similarity(query, riddle)
                     gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
-                correct_time = datetime.datetime.now() - datetime.datetime.strptime(request.session.get('game_start_time'), "%Y-%m-%d %H:%M:%S")
+                correct_time = datetime.datetime.now() - datetime.datetime.strptime(
+                    request.session.get('game_start_time'), "%Y-%m-%d %H:%M:%S")
                 gameService.correct_game(game_id, correct_time)
                 game = gameService.get_game(game_id)
                 rankingService.update_ranking(game)  # 랭킹 업데이트
@@ -200,7 +198,10 @@ async def create_riddle(request: Request):
         exQueryResponse = body.get('exQueryResponse')
 
         if userService.create_riddle(user.user_id) is True:
-            riddle_id = riddleService.create_riddle(user_email, riddleTitle, problem, situation, answer, progress_sentences)
+            problem_embedding, situation_embedding, answer_embedding = get_embeddings(problem, situation, answer)
+            riddle_id = riddleService.create_riddle(user_email, riddleTitle, problem, situation, answer,
+                                                    progress_sentences, problem_embedding, situation_embedding,
+                                                    answer_embedding)
             rpService.create_riddle_prompting(riddle_id, exQueryResponse)
             return JSONResponse(content={'riddleId': riddle_id})
         else:
@@ -259,3 +260,11 @@ def get_token_from_header(request: Request) -> str:
         return token
     except ValueError:
         raise HTTPException(status_code=401, detail="Invalid Authorization header format")
+
+
+def get_embeddings(problem, situation, answer):
+    problem_embedding = ltp_gpt.generate_embedding(problem)
+    situation_embedding = [ltp_gpt.generate_embedding(sentence.strip()) for sentence in situation]
+    answer_embedding = ltp_gpt.generate_embedding(answer)
+
+    return problem_embedding, situation_embedding, answer_embedding

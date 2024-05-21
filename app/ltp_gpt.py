@@ -43,15 +43,10 @@ riddlePromptingService = RiddlePromptingService(session)
 # Embedding, 1차 프롬프팅
 def evaluate_question(question, riddle):
     question_embedding = generate_embedding(question)
-    problem_embedding = generate_embedding(riddle.problem)
-    situation_sentences = riddle.situation.split(".")
-    situation_embeddings = [generate_embedding(sentence.strip()) for sentence in situation_sentences]
-    answer_embedding = generate_embedding(riddle.answer)
-
-    problem_similarity = similarity(question_embedding, problem_embedding)
-    situation_similarities = [similarity(question_embedding, emb) for emb in situation_embeddings]
+    problem_similarity = similarity(question_embedding, riddle.problem_embedding_str)
+    situation_similarities = [similarity(question_embedding, emb) for emb in riddle.situation_embedding_str]
     max_similarity = max(situation_similarities)
-    answer_similarity = similarity(question_embedding, answer_embedding)
+    answer_similarity = similarity(question_embedding, riddle.answer_embedding_str)
 
     print('정답 유사도 = ' + str(answer_similarity))
     print('문제 유사도 = ' + str(problem_similarity))
@@ -64,8 +59,8 @@ def evaluate_question(question, riddle):
         return '그렇다고 볼 수도 있습니다.'
     else:
         count = 0
-        for i in range(len(situation_sentences)):
-            situation_similarity = similarity(question_embedding, situation_embeddings[i])
+        for i in range(len(riddle.situation_embedding_str)):
+            situation_similarity = similarity(question_embedding, riddle.situation_embedding_str[i])
             if situation_similarity >= 0.4:
                 count += 1
         print("count : " + str(count))
