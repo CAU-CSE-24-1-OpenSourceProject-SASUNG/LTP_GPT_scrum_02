@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware  # CORS
 from fastapi.templating import Jinja2Templates
@@ -6,7 +8,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 import app.ltp_gpt as ltp_gpt
-from .Init import session
+from .Init import session, engine
 from .auth.authenticate import authenticate
 # google login
 from .auth.jwt import create_access_token
@@ -112,13 +114,16 @@ async def chat(request: Request, queryInfo: QueryInfoDto):
             query_id = queryService.create_query(query, response)  # query 생성
             gqService.create_game_query(game_id, query_id)  # game_query 생성 : query ticket -= 1
             # 2차 프롬프팅
-            if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
-                similarity = ltp_gpt.evaluate_similarity(query, riddle)
-                gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
-            game = gameService.get_game(game_id)
-            # Game 데이터 업데이트 : 정답을 맞췄을 때만
-            gameService.correct_game(user_id, game, request.session.get('game_start_time'))
-            return JSONResponse(content={"response": response})
+            if game.is_first is True:
+                if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
+                    similarity = ltp_gpt.evaluate_similarity(query, riddle)
+                    gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
+                correct_time = datetime.datetime.now() - datetime.datetime.strptime(request.session.get('game_start_time'), "%Y-%m-%d %H:%M:%S")
+                gameService.correct_game(game_id, correct_time)
+                game = gameService.get_game(game_id)
+                rankingService.update_ranking(game)  # 랭킹 업데이트
+                userService.level_up(user_id)  # 경험치 증가
+                return JSONResponse(content={"response": response})
         else:
             return JSONResponse(content={'error': "Failed to create query"}, status_code=400)
     except Exception as e:

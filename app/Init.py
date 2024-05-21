@@ -6,7 +6,8 @@ from sqlalchemy.orm import relationship, sessionmaker
 
 # db연결 및 객체 베이스 생성
 # 'mysql_pymysql://db_id:db_password@dp_ip/dp_port'
-engine = create_engine('mysql+pymysql://root:seaturtle@localhost/test2', echo=False)
+# engine = create_engine('mysql+pymysql://root:seaturtle@localhost/test2', echo=False)
+engine = create_engine('mysql+pymysql://root:gusdn4818@localhost/ossp', echo=False)
 Base = sqlalchemy.orm.declarative_base()
 
 # Session 선언. Session을 이용하여 db를 조작 가능
@@ -55,7 +56,7 @@ class Riddle(Base):
     problem = Column(String(255))
     situation = Column(String(3000))
     answer = Column(String(255))
-    progress_sentences = Column(3000)
+    progress_sentences = Column(String(3000))
     hit_ratio = Column(Float)
     point_1 = Column(Integer)
     point_2 = Column(Integer)
