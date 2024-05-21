@@ -129,8 +129,8 @@ async def chat(request: Request, queryInfo: QueryInfo):
         print(response)
 
         # 2차
-#        if(response == '맞습니다.' or response == '그렇다고 볼 수도 있습니다.') or response == '정답과 유사합니다.' or response == '정확한 정답을 맞추셨습니다.':
-#            similarity = ltp_gpt.evaluate_similarity(question)
+        if('맞습니다' in response or '그렇다고 볼 수도 있습니다') in responce or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
+            similarity = ltp_gpt.evaluate_similarity(question)
 
         # 쿼리 id 할당
         query_id = queryService.create_query(query, response)
