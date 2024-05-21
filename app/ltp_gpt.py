@@ -3,6 +3,8 @@ import os
 import json
 from dotenv import load_dotenv
 import re
+from .service.RiddleService import RiddleService
+from .service.RiddlePromptingService import RiddlePromptingService
 
 load_dotenv()
 
@@ -13,18 +15,6 @@ def load_data(json_file):
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
     return data
-
-# JSON 파일 경로
-umbrella_data = load_data('./app/puzzles/umbrella.json')  # Umbrella 임베딩 / 프롬프팅
-listenling_data = load_data('./app/puzzles/listening.json') #  listening 임베딩 / 프롬프팅
-gpt_data = load_data('./app/puzzles/GPT_answer.json') # GPT 대답 말투 프롬프팅
-
-# 임베딩 string 가져오기
-problem = umbrella_data['problem']
-situation = umbrella_data['situation']
-answer = umbrella_data['answer']
-messages = umbrella_data['messages']
-gpt_ans = gpt_data['gpt_ans'] # 말투 프롬프팅
 
 model = 'gpt-3.5-turbo'
 
@@ -44,8 +34,11 @@ situation_sentences = situation.split(".")
 situation_embeddings = [generate_embedding(sentence.strip()) for sentence in situation_sentences]
 answer_embedding = generate_embedding(answer)
 
+userService = UserService(session)
+riddlePromptingService = RiddlePromptingService(session)
+
 # Embedding, 1차 프롬프팅
-def evaluate_question(question):
+def evaluate_question(question, riddle):
     question_embedding = generate_embedding(question)
 
     problem_similarity = similarity(question_embedding, problem_embedding)
@@ -72,7 +65,16 @@ def evaluate_question(question):
         if count == 0:
             return '문제의 정답과 상관이 없습니다.'
         else:
-            message = messages + gpt_ans + [{"role": "user", "content": question}]
+            gpt_prompting = "당신은 상황 유추 퀴즈 게임의 진행자 입니다. 플레이어는 퀴즈의 정답을 맞추기 위해 당신에게 질문할 것입니다. 당신은 플레이어의 질문이 아래의 문제와 상황에 논리적으로 일치하거나 유사한지 판단해야 합니다." 
+            problem_sentence = "문제: (" + riddle.problem + ")"
+            situation_sentence = "상황:(" + riddle.situation + ")"
+            ans_sentence = "답안:(" + riddle.answer + ")" 
+
+            assistants = riddlePromptingService.get_all_prompting()
+            assistant_prompting = []
+            for i in assistants:
+                assistant_prompting.append({"role":"user", "content": i.user_query}, {"role":"assistant", "content": i.assistant_response})
+            message = [{"role": "system", "content": gpt_prompting}] + assistant_prompting + [{"role": "user", "content": question}]
             response = openai.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=message,
@@ -81,25 +83,21 @@ def evaluate_question(question):
                     )
             return response.choices[0].message.content
 
-# 2차 프롬프팅
-gpt_similarity = load_data('./app/puzzles/gpt_similarity.json') # GPT 유사도 검증
-similarity_messages = gpt_similarity['gpt_similarity']
-def evaluate_similarity(question, prompting):
-
-    sentences = prompting.split('$')
+def evaluate_similarity(question, riddle):
+    sentences = riddle.progress_sentences.split('$')
     num_sentence = len(sentences)
     prompt_sentence = f"{num_sentence}개의 문장이 있습니다. "
-
     for i in range(num_sentence):
         prompt_sentence += f"{i + 1}번째 문장입니다: ({sentences[i]}) "
     
-        similarity_message = [{"role": "system", "content": prompt_sentence}] + similarity_messages + [{"role": "user", "content": question}]
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=similarity_message,
-            temperature=0.0,
-            top_p=0.5
-        )
+    prompt_sentence += "당신은 문장 맞추기 퀴즈 시스템의 진행자입니다. 이 시스템의 참여자인 플레이어는 퀴즈의 정답을 맞추기 위해 질문을 할 것입니다. 플레이어에게 문장을 입력 받으면 입력받은 문장을 우선 출력해주세요. 당신은 플레이어의 질문이 앞서 말한 5개의 문장과 논리적으로 일치한지 판단해야 합니다. 플레이어의 질문과 완전히 똑같은 의미의 문장은 True, 플레이어의 질문과 의미적으로 조금 다르거나, 아예 관련이 없는 문장은 False로 대답해야 하고, 그를 위해서 다음과 같은 과정을 밟아주세요: 1. 모든 문장 하나하나씩 플레이어의 질문과의 유사성을 step by step으로 매우 자세하게 설명하세요. 2. 모든 문장에 대해 True/False를 판단하세요. 모든 문장에 대해 평가를 수행해야 합니다. 3. 최종 결과를 형식에 맞춰 제공하세요. 최종 결과 형식은 반드시 아래와 같습니다: '#(1번 문장과 플레이어의 질문): <True/False>, #(2번 문장과 플레이어의 질문): <True/False>, #(3번 문장과 플레이어의 질문): <True/False>, #(4번 문장과 플레이어의 질문): <True/False>, #(5번 문장과 플레이어의 질문): <True/False>'. 모든 문장에 대해 True/False 평가를 반드시 포함해야 합니다."
+    similarity_message = [{"role": "system", "content": prompt_sentence} + {"role": "user", "content": question}]
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=similarity_message,
+        temperature=0.0,
+        top_p=0.5
+    )
     ans = response.choices[0].message.content
     
     ####
