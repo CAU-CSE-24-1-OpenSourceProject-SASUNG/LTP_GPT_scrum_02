@@ -202,9 +202,9 @@ async def create_riddle(request: Request):
         if userService.create_riddle(user.user_id) is True:
             riddle_id = riddleService.create_riddle(user_email, riddleTitle, problem, situation, answer, progress_sentences)
             rpService.create_riddle_prompting(riddle_id, exQueryResponse)
-            return JSONResponse(content={'error': "Failed to create riddle"}, status_code=400)
+            return JSONResponse(content={'riddleId': riddle_id})
         else:
-            return JSONResponse(content={'riddleId': "Riddle Token Error"})
+            return JSONResponse(content={'error': "Failed to create game"}, status_code=400)
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=404)

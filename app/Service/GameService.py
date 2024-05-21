@@ -1,7 +1,5 @@
 import datetime
 
-from app.main import rankingService, userService
-
 from app.Init import *
 
 
