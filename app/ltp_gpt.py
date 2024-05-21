@@ -142,6 +142,6 @@ def evaluate_similarity(question, riddle):
     percent = 100
     for i in range(len(myList), -1, -1):
         if(myList[i] == True):
-            return str(percent) + "%"
+            return percent
         percent -= int((100 / lem(myList)))
-    return str(percent) + "%"
+    return percent
