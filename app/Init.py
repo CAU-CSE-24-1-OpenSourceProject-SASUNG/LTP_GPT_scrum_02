@@ -81,7 +81,7 @@ class Ranking(Base):
     rank = Column(Integer)
     user_id = Column(String(36), ForeignKey('users.user_id'))
     user_name = Column(String(255))
-    play_time = Column(Time)
+    correct_time = Column(Time)
 
     user = relationship('User')
     riddle = relationship('Riddle')

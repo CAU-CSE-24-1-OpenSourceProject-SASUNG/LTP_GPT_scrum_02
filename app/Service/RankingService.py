@@ -15,13 +15,13 @@ class RankingService:
             rank = 1
             if rankings:
                 for ranking in rankings:
-                    if game.play_time > ranking.play_time:
+                    if game.correct_time > ranking.correct_time:
                         rank += 1
                 new_ranking = Ranking(riddle_id=game.riddle_id, rank=rank, user_id=user.user_id, user_name=user.name,
-                                      play_time=game.play_time)
+                                      correct_time=game.correct_time)
             else:
                 new_ranking = Ranking(riddle_id=game.riddle_id, rank=rank, user_id=user.user_id, user_name=user.name,
-                                      play_time=game.play_time)
+                                      correct_time=game.correct_time)
 
             for old_ranking in self.session.query(Ranking).filter(Ranking.rank >= rank).all():
                 old_ranking.rank += 1

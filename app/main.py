@@ -101,30 +101,25 @@ async def chat(request: Request, queryInfo: QueryInfoDto):
         game_id = queryInfo.game_id
         riddle_id = gameService.get_game(game_id).riddle_id
         riddle = riddleService.get_riddle(riddle_id)
-#       response = queryService.get_response(query, riddle_id)  # 메모이제이션
-#        if not response:
-#            response = ltp_gpt.evaluate_question(query)
-        # 1차 프롬프팅
-        response = ltp_gpt.evaluate_question(query, riddle)
-        # 쿼리 생성 -> 쿼리 개수 제한
-        query_id = queryService.create_query(query, response)
-        # game_id - query_id 연결
-        gqService.create_game_query(game_id, query_id)
-        # 2차 프롬프팅
-        if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
-            similarity = ltp_gpt.evaluate_similarity(query, riddle)
-            gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
-        query_id = queryService.create_query(query, response)  # 쿼리 생성 -> 쿼리 횟수 제한
-        gqService.create_game_query(game_id, query_id)  # game_id - query_id 연결
-        game = gameService.get_game(game_id)  # 정답을 맞췄을 때 데이터 처리
-        if game.is_first is True and game.progress == 100:  # 동일 게임에 대해 최초의 정답만 데이터, 랭킹을 업데이트
-            game_start_time_str = request.session.get('game_start_time')
-            if game_start_time_str:
-                gameService.correct_game(game_id, game_start_time_str, False, True)  # Game 데이터 업데이트
-                game = gameService.get_game(game_id)
-                rankingService.update_ranking(game)  # 랭킹 업데이트
-                userService.level_up(user_id)  # 경험치 증가
-        return JSONResponse(content={"response": response})
+
+        if gqService.is_full(game_id) is False:  # query 개수 제한
+            # response = queryService.get_response(query, riddle_id)  # 메모이제이션
+            #  if not response:
+            #      response = ltp_gpt.evaluate_question(query)
+            # 1차 프롬프팅
+            response = ltp_gpt.evaluate_question(query, riddle)
+            query_id = queryService.create_query(query, response)   # query 생성
+            gqService.create_game_query(game_id, query_id)  # game_query 생성
+            # 2차 프롬프팅
+            if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
+                similarity = ltp_gpt.evaluate_similarity(query, riddle)
+                gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
+            game = gameService.get_game(game_id)
+            # Game 데이터 업데이트 : 정답을 맞췄을 때만
+            gameService.correct_game(user_id, game, request.session.get('game_start_time'), False, True)
+            return JSONResponse(content={"response": response})
+        else:
+            return JSONResponse(content={"response": "Query Full Error"})
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=500)
@@ -171,16 +166,15 @@ async def create_game(request: Request):
         token = get_token_from_header(request)
         user_email = await authenticate(token)
         user = userService.get_user_email(user_email)
-        game_id = gameService.create_game(user.user_id, riddle_id)
-        # user id - game_id 관계 설정
-        ugService.create_user_game(user.user_id, game_id)
+        game_id = gameService.create_game(user.user_id, riddle_id)  # game 생성
+        ugService.create_user_game(user.user_id, game_id)   # user_game 생성
         return JSONResponse(content={'newGameId': game_id})
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=404)
 
 
-# 새로은 riddle 생성
+# 새로운 riddle 생성
 @app.post('/newriddle')
 async def create_riddle(request: Request):
     try:
@@ -216,8 +210,6 @@ async def progress(request: Request):
         return JSONResponse(content={"error": str(e)}, status_code=404)
 
 
-# 랭킹 조회
-@app.get()
 # 게임 접속하기
 @app.get('/gameinfo')
 async def access_game(request: Request, gameId: str = Query(...)):
@@ -247,7 +239,6 @@ def get_token_from_header(request: Request) -> str:
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         raise HTTPException(status_code=401, detail="Authorization header is missing")
-
     try:
         scheme, token = auth_header.split()
         if scheme.lower() != 'bearer':

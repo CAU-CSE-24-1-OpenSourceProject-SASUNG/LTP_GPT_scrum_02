@@ -1,5 +1,7 @@
 import datetime
 
+from app.main import rankingService, userService
+
 from app.Init import *
 
 
@@ -45,23 +47,27 @@ class GameService:
         game.updatedAt = datetime.datetime.now()
 
     # 게임에서 정답을 맞췄을 때
-    def correct_game(self, game_id, game_start_time_str, is_first, hit):
-        game_start_time = datetime.datetime.strptime(game_start_time_str, "%Y-%m-%d %H:%M:%S")
-        game_correct_time = datetime.datetime.now()
-        correct_time = game_correct_time - game_start_time
-        game = self.get_game(game_id)
-        if game:
-            game_queries = self.session.query(Game_Query).filter_by(game_id=game_id).all()
-            query_length = 0
-            for game_query in game_queries:
-                query_length += len(game_query.query.query)
-            query_count = len(game_queries)
-            game.query_count = query_count
-            game.query_length = query_length
-            game.correct_time = correct_time
-            game.is_first = is_first
-            game.hit = hit
-        self.session.commit()
+    def correct_game(self, user_id, game, game_start_time_str, is_first, hit):
+        if game.is_first is True and game.progress == 100:
+            game_start_time = datetime.datetime.strptime(game_start_time_str, "%Y-%m-%d %H:%M:%S")
+            game_correct_time = datetime.datetime.now()
+            correct_time = game_correct_time - game_start_time
+            if game:
+                game_queries = self.session.query(Game_Query).filter_by(game_id=game.game_id).all()
+                query_length = 0
+                for game_query in game_queries:
+                    query_length += len(game_query.query.query)
+                query_count = len(game_queries)
+                game.query_count = query_count
+                game.query_length = query_length
+                game.correct_time = correct_time
+                game.is_first = is_first
+                game.hit = hit
+                self.session.commit()
+                updated_game = self.session.query(Game).get(game.game_id)
+                rankingService.update_ranking(updated_game)  # 랭킹 업데이트
+                userService.level_up(user_id)  # 경험치 증가
+
 
     # 게임에서 나갔을 때
     def end_game(self, game_id, play_time):
@@ -80,9 +86,10 @@ class GameService:
     # 진행률 업데이트
     def set_progress(self, game_id, progress):
         game = self.get_game(game_id)
-        game.progress = progress
-        self.session.add(game)
-        self.session.commit()
+        if game.progress < progress:
+            game.progress = progress
+            self.session.add(game)
+            self.session.commit()
 
     # 진행률 조회
     def get_progress(self, game_id):
