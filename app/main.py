@@ -101,14 +101,17 @@ async def chat(request: Request, queryInfo: QueryInfoDto):
         game_id = queryInfo.game_id
         riddle_id = gameService.get_game(game_id).riddle_id
         riddle = riddleService.get_riddle(riddle_id)
-        #       response = queryService.get_response(query, riddle_id)  # 메모이제이션
-        #        if not response:
-        #            response = ltp_gpt.evaluate_question(query)
-
+#       response = queryService.get_response(query, riddle_id)  # 메모이제이션
+#        if not response:
+#            response = ltp_gpt.evaluate_question(query)
         # 1차 프롬프팅
         response = ltp_gpt.evaluate_question(query, riddle)
+        # 쿼리 생성 -> 쿼리 개수 제한
+        query_id = queryService.create_query(query, response)
+        # game_id - query_id 연결
+        gqService.create_game_query(game_id, query_id)
         # 2차 프롬프팅
-        if response == '맞습니다.' or response == '그렇다고 볼 수도 있습니다.' or response == '정답과 유사합니다.' or response == '정확한 정답을 맞추셨습니다.':
+        if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
             similarity = ltp_gpt.evaluate_similarity(query, riddle)
             gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
         query_id = queryService.create_query(query, response)  # 쿼리 생성 -> 쿼리 횟수 제한
