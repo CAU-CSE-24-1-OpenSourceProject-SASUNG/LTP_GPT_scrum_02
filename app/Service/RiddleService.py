@@ -5,8 +5,11 @@ class RiddleService:
     def __init__(self, session):
         self.session = session
 
-    def create_riddle(self, name, title, problem, hit_ratio):
-        riddle = Riddle(name=name, title=title, problem=problem, hit_ratio=hit_ratio)
+    def create_riddle(self, creater, title, problem, situation, answer, progress_sentences, hit_ratio):
+        progress_sentence = '$'.join(progress_sentences)
+        riddle = Riddle(creater=creater, title=title, problem=problem, situation=situation, answer=answer,
+                        progress_sentences=progress_sentence, hit_ratio=hit_ratio, point_1=0, point_2=0, point_3=0,
+                        point_4=0, point_5=0)
         self.session.add(riddle)
         self.session.commit()
 
@@ -21,11 +24,25 @@ class RiddleService:
     def get_all_riddle(self):
         return self.session.query(Riddle).all()
 
-    def update_riddle(self, riddle_id, hit_ratio):
+    def update_hit_ratio(self, riddle_id, hit_ratio):
         riddle = self.get_riddle(riddle_id)
         if riddle:
             riddle.hit_ratio = hit_ratio
             self.session.commit()
+
+    def set_point(self, riddle_id, point):
+        riddle = self.get_riddle(riddle_id)
+        if riddle:
+            if point == 1:
+                riddle.point_1 += 1
+            elif point == 2:
+                riddle.point_2 += 1
+            elif point == 3:
+                riddle.point_3 += 1
+            elif point == 4:
+                riddle.point_4 += 1
+            elif point == 5:
+                riddle.point_5 += 1
 
     def delete_riddle(self, riddle_id):
         riddle = self.get_riddle(riddle_id)

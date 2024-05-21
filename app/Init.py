@@ -22,8 +22,6 @@ class User(Base):
     name = Column(String(255))
     experience = Column(Integer)
 
-    total_feedback = relationship("Total_Feedback", uselist=False)
-
 
 class User_Game(Base):
     __tablename__ = 'user_games'
@@ -43,15 +41,36 @@ class Total_Feedback(Base):
     user_id = Column(String(36), ForeignKey('users.user_id'))
     content = Column(String(255))
 
+    user = relationship("User", uselist=False)
+
 
 class Riddle(Base):
     __tablename__ = 'riddles'
 
     riddle_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = Column(String(255))
-    problem = Column(String(255))
+    creater = Column(String(255))
     title = Column(String(255))
+    problem = Column(String(255))
+    situation = Column(String(3000))
+    answer = Column(String(255))
+    progress_sentences = Column(3000)
     hit_ratio = Column(Float)
+    point_1 = Column(Integer)
+    point_2 = Column(Integer)
+    point_3 = Column(Integer)
+    point_4 = Column(Integer)
+    point_5 = Column(Integer)
+
+
+class Riddle_Prompting(Base):
+    __tablename__ = 'riddle_prompting'
+
+    riddle_prompting_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    riddle_id = Column(String(36), ForeignKey('riddles.riddle_id'))
+    user_query = Column(String(255))
+    assistant_response = Column(String(255))
+
+    riddle = relationship('Riddle', uselist=False)
 
 
 class Ranking(Base):

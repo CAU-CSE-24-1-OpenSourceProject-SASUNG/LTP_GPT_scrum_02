@@ -45,7 +45,10 @@ class GameService:
         game.updatedAt = datetime.datetime.now()
 
     # 게임에서 정답을 맞췄을 때
-    def correct_game(self, game_id, correct_time, is_first, hit):
+    def correct_game(self, game_id, game_start_time_str, is_first, hit):
+        game_start_time = datetime.datetime.strptime(game_start_time_str, "%Y-%m-%d %H:%M:%S")
+        game_correct_time = datetime.datetime.now()
+        correct_time = game_correct_time - game_start_time
         game = self.get_game(game_id)
         if game:
             game_queries = self.session.query(Game_Query).filter_by(game_id=game_id).all()
@@ -74,22 +77,17 @@ class GameService:
             game.play_time += play_time
         self.session.commit()
 
-    # 진행률 저장.. result는 True,False 리스트
-    def set_progress(self, game_id, result):
+    # 진행률 업데이트
+    def set_progress(self, game_id, progress):
         game = self.get_game(game_id)
-        for i, tf in enumerate(result):
-            if tf is True:
-                if i == 0:
-                    game.progress = 20
-                elif i == 1:
-                    game.progress = 40
-                elif i == 2:
-                    game.progress = 60
-                elif i == 3:
-                    game.progress = 80
-                elif i == 4:
-                    game.progress = 100
-                break
+        game.progress = progress
+        self.session.add(game)
+        self.session.commit()
+
+    # 진행률 조회
+    def get_progress(self, game_id):
+        game = self.get_game(game_id)
+        return game.progress
 
     def delete_game(self, game_id):
         game = self.get_game(game_id)

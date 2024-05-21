@@ -49,14 +49,11 @@ pydantic-settings==2.2.1
 pydantic_core==2.18.2
 Pygments==2.18.0
 PyMySQL==1.1.0
-=======
 h11==0.14.0
 httpcore==1.0.5
 httplib2==0.22.0
 httpx==0.27.0
 idna==3.7
-itsdangerous==2.1.2
-Jinja2==3.1.3
 MarkupSafe==2.1.5
 oauth==1.0.1
 oauthlib==2.1.0
@@ -64,15 +61,11 @@ openai==1.17.0
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
 pycparser==2.22
-pydantic==2.7.0
-pydantic_core==2.18.1
->>>>>>> origin/zeo
 pyparsing==3.1.2
 python-dotenv==1.0.1
 python-jose==3.3.0
 python-multipart==0.0.9
 python-oauth2==1.1.1
-<<<<<<< HEAD
 PyYAML==6.0.1
 requests==2.31.0
 requests-oauthlib==1.1.0
@@ -93,7 +86,6 @@ uvicorn==0.29.0
 uvloop==0.19.0
 watchfiles==0.21.0
 websockets==12.0
-=======
 requests==2.31.0
 requests-oauthlib==1.1.0
 rsa==4.9
@@ -104,5 +96,4 @@ tqdm==4.66.2
 typing_extensions==4.11.0
 urllib3==2.2.1
 uvicorn==0.29.0
->>>>>>> origin/zeo
 Werkzeug==3.0.2
