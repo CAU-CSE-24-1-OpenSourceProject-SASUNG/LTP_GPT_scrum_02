@@ -13,6 +13,7 @@ class RiddleService:
         problem_embedding_str = json.dumps(problem_embedding)
         situation_embedding_str = json.dumps(situation_embedding)  # 다차원 리스트도 JSON 문자열로 변환
         answer_embedding_str = json.dumps(answer_embedding)
+        situation = ' '.join(situation)
         riddle = Riddle(creater=creater, title=title, problem=problem, situation=situation, answer=answer,
                         progress_sentences=progress_sentence, hit_ratio=0, point_1=0, point_2=0, point_3=0,
                         point_4=0, point_5=0, problem_embedding_str=problem_embedding_str,

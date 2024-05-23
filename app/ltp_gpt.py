@@ -97,7 +97,7 @@ def evaluate_question(question, riddle):
                 return '그렇다고 볼 수도 있습니다.'
             elif '아닙니다' in GPT_response:
                 return '아닙니다.'
-            elif '모르겠습니다' in in GPT_response:
+            elif '모르겠습니다' in GPT_response:
                 return '모르겠습니다.'
             elif '정확한 정답을 맞추셨습니다' in GPT_response:
                 return '정확한 정답을 맞추셨습니다.'

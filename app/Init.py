@@ -3,11 +3,12 @@ import uuid
 import sqlalchemy
 from sqlalchemy import *
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 # db연결 및 객체 베이스 생성
 # 'mysql_pymysql://db_id:db_password@dp_ip/dp_port'
-engine = create_engine('mysql+pymysql://root:seaturtle@localhost/test4', echo=False)
-#engine = create_engine('mysql+pymysql://root:gusdn4818@localhost/ossp', echo=False)
+# engine = create_engine('mysql+pymysql://root:seaturtle@localhost/test4', echo=False)
+engine = create_engine('mysql+pymysql://root:gusdn4818@localhost/ossp', echo=False)
 Base = sqlalchemy.orm.declarative_base()
 
 # Session 선언. Session을 이용하여 db를 조작 가능
@@ -63,9 +64,9 @@ class Riddle(Base):
     point_3 = Column(Integer)
     point_4 = Column(Integer)
     point_5 = Column(Integer)
-    problem_embedding_str = Column(Text)
-    situation_embedding_str = Column(Text)
-    answer_embedding_str = Column(Text)
+    problem_embedding_str = Column(LONGTEXT)
+    situation_embedding_str = Column(LONGTEXT)
+    answer_embedding_str = Column(LONGTEXT)
 
 
 class Riddle_Prompting(Base):
