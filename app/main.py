@@ -102,8 +102,7 @@ async def chat(request: Request, queryInfo: QueryInfoDto):
         query = queryInfo.query
         game_id = queryInfo.game_id
         game = gameService.get_game(game_id)
-        riddle_id = game.riddle_id
-        riddle = riddleService.get_riddle(riddle_id)
+        riddle = game.riddle
         if game.query_ticket > 0:  # query 개수 제한
             # TODO 메모이제이션
             response = ltp_gpt.evaluate_question(query, riddle)   # 1차 프롬프팅
@@ -147,7 +146,7 @@ async def access(request: Request):
     user_email = await authenticate(token)
     user = userService.get_user_email(user_email)
     game = ugService.get_recent_game(user.user_id)
-    gameService.reaccess(game.game_id)
+    # gameService.reaccess(game.game_id)
     return JSONResponse(content={'gameId': game.game_id})
 
 
@@ -236,7 +235,6 @@ async def access_game(request: Request, gameId: str = Query(...)):
         game_queries = gqService.get_queries(gameId)
         queries = [game_query.query for game_query in game_queries]
         queries.sort(key=lambda x: x.createdAt)   # query 생성 시각 순으로 오름차순 정렬
-        gameService.reaccess(gameId)  # 재접속
         game_info = [{'gameTitle': game.title, 'problem': riddle.problem}]
         for query in queries:
             game_info.append({
