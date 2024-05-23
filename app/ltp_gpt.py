@@ -90,7 +90,22 @@ def evaluate_question(question, riddle):
                 temperature=0.0,
                 top_p=0.5
             )
-            return response.choices[0].message.content
+            GPT_response = response.choices[0].message.content
+            if '맞습니다' in GPT_response:
+                return '맞습니다.'
+            elif '그렇다고 볼 수도 있습니다' in GPT_response:
+                return '그렇다고 볼 수도 있습니다.'
+            elif '아닙니다' in GPT_response:
+                return '아닙니다.'
+            elif '모르겠습니다' in in GPT_response:
+                return '모르겠습니다.'
+            elif '정확한 정답을 맞추셨습니다' in GPT_response:
+                return '정확한 정답을 맞추셨습니다.'
+            elif '문제의 정답과 상관이 없습니다' in GPT_response:
+                return '문제의 정답과 상관이 없습니다.'
+            elif '정답과 유사합니다' in GPT_response:
+                return '정답과 유사합니다.'
+            return '문제의 정답과 상관이 없습니다.'
 
 
 def evaluate_similarity(question, riddle):
