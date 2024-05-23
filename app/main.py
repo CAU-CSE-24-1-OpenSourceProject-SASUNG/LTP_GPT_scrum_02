@@ -268,3 +268,4 @@ def get_embeddings(problem, situation, answer):
     answer_embedding = ltp_gpt.generate_embedding(answer)
 
     return problem_embedding, situation_embedding, answer_embedding
+

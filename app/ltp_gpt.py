@@ -42,11 +42,15 @@ riddlePromptingService = RiddlePromptingService(session)
 
 # Embedding, 1차 프롬프팅
 def evaluate_question(question, riddle):
+    problem_embedding = json.loads(riddle.problem_embedding_str)
+    situation_embedding = json.loads(riddle.situation_embedding_str)
+    answer_embedding = json.loads(riddle.answer_embedding_str)
     question_embedding = generate_embedding(question)
-    problem_similarity = similarity(question_embedding, riddle.problem_embedding_str)
-    situation_similarities = [similarity(question_embedding, emb) for emb in riddle.situation_embedding_str]
+
+    problem_similarity = similarity(question_embedding, problem_embedding)
+    situation_similarities = [similarity(question_embedding, emb) for emb in situation_embedding]
     max_similarity = max(situation_similarities)
-    answer_similarity = similarity(question_embedding, riddle.answer_embedding_str)
+    answer_similarity = similarity(question_embedding, answer_embedding)
 
     print('정답 유사도 = ' + str(answer_similarity))
     print('문제 유사도 = ' + str(problem_similarity))

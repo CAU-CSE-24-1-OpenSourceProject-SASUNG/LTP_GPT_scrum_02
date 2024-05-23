@@ -63,9 +63,9 @@ class Riddle(Base):
     point_3 = Column(Integer)
     point_4 = Column(Integer)
     point_5 = Column(Integer)
-    problem_embedding_str = Column(String(3000))
-    situation_embedding_str = Column(String(3000))
-    answer_embedding_str = Column(String(3000))
+    problem_embedding_str = Column(Text)
+    situation_embedding_str = Column(Text)
+    answer_embedding_str = Column(Text)
 
 
 class Riddle_Prompting(Base):

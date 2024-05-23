@@ -1,3 +1,5 @@
+import json
+
 from app.Init import *
 
 
@@ -8,9 +10,9 @@ class RiddleService:
     def create_riddle(self, creater, title, problem, situation, answer, progress_sentences, problem_embedding,
                       situation_embedding, answer_embedding):
         progress_sentence = '$'.join(progress_sentences)
-        problem_embedding_str = str(problem_embedding)
-        situation_embedding_str = '$'.join(map(str, situation_embedding))
-        answer_embedding_str = str(answer_embedding)
+        problem_embedding_str = json.dumps(problem_embedding)
+        situation_embedding_str = json.dumps(situation_embedding)  # 다차원 리스트도 JSON 문자열로 변환
+        answer_embedding_str = json.dumps(answer_embedding)
         riddle = Riddle(creater=creater, title=title, problem=problem, situation=situation, answer=answer,
                         progress_sentences=progress_sentence, hit_ratio=0, point_1=0, point_2=0, point_3=0,
                         point_4=0, point_5=0, problem_embedding_str=problem_embedding_str,
