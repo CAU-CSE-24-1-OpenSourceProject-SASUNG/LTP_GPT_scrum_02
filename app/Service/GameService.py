@@ -8,8 +8,7 @@ class GameService:
         self.session = session
 
     def create_game(self, user_id, riddle_id, is_first=True, progress=0, query_ticket=30, correct_time=0, play_time=0,
-                    query_length=0,
-                    hit=False):
+                    query_length=0, hit=False):
         count = 1
         user_games = self.session.query(User_Game).filter_by(user_id=user_id).all()
         for user_game in user_games:

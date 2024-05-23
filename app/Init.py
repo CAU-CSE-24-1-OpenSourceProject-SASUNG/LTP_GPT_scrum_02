@@ -52,7 +52,7 @@ class Riddle(Base):
     __tablename__ = 'riddles'
 
     riddle_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    creater = Column(String(255))
+    creator = Column(String(255))
     title = Column(String(255))
     problem = Column(String(255))
     situation = Column(String(3000))

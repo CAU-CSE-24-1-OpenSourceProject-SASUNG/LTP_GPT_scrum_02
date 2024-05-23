@@ -1,6 +1,6 @@
 import datetime
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware  # CORS
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
@@ -28,6 +28,8 @@ from .service.RiddleService import RiddleService
 from .service.TotalFeedbackService import TotalFeedbackService
 from .service.UserGameService import UserGameService
 from .service.UserService import UserService
+# util
+from .util.util import *
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
@@ -62,7 +64,7 @@ rpService = RiddlePromptingService(session)
 # DB 모든 데이터 삭제
 with engine.connect() as conn:
     table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries', 'ranking']
-    # table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries']
+    # table_names = ['user_games', 'total_feedbacks', 'users', 'game_queries', 'games', 'feedbacks', 'queries', 'riddles', 'riddle_prompting']
     conn.execute(text('SET FOREIGN_KEY_CHECKS = 0;'))  # 외래 키 제약 조건을 잠시 해제
     for table_name in table_names:
         delete_query = text('TRUNCATE TABLE {};'.format(table_name))
@@ -99,29 +101,27 @@ async def chat(request: Request, queryInfo: QueryInfoDto):
         user_id = userService.get_user_email(user_email)
         query = queryInfo.query
         game_id = queryInfo.game_id
-        riddle_id = gameService.get_game(game_id).riddle_id
-        riddle = riddleService.get_riddle(riddle_id)
         game = gameService.get_game(game_id)
+        riddle_id = game.riddle_id
+        riddle = riddleService.get_riddle(riddle_id)
         if game.query_ticket > 0:  # query 개수 제한
-            # response = queryService.get_response(query, riddle_id)  # 메모이제이션
-            #  if not response:
-            #      response = ltp_gpt.evaluate_question(query)
-            # 1차 프롬프팅
-            response = ltp_gpt.evaluate_question(query, riddle)
+            # TODO 메모이제이션
+            response = ltp_gpt.evaluate_question(query, riddle)   # 1차 프롬프팅
             query_id = queryService.create_query(query, response)  # query 생성
             gqService.create_game_query(game_id, query_id)  # game_query 생성 : query ticket -= 1
-            # 2차 프롬프팅
-            if game.is_first is True:
-                if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
-                    similarity = ltp_gpt.evaluate_similarity(query, riddle)
-                    gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
-                correct_time = datetime.datetime.now() - datetime.datetime.strptime(
-                    request.session.get('game_start_time'), "%Y-%m-%d %H:%M:%S")
-                gameService.correct_game(game_id, correct_time)
-                game = gameService.get_game(game_id)
-                rankingService.update_ranking(game)  # 랭킹 업데이트
-                userService.level_up(user_id)  # 경험치 증가
-                return JSONResponse(content={"response": response})
+            print(response)
+            if '맞습니다' in response or '그렇다고 볼 수도 있습니다' in response or '정답과 유사합니다' in response or '정확한 정답을 맞추셨습니다' in response:
+                similarity = ltp_gpt.evaluate_similarity(query, riddle)   # 2차 프롬프팅
+                print("유사도 : " + similarity)
+                gameService.set_progress(game_id, similarity)  # game 진행도 업데이트
+                # TODO is_first 값이 왜 자동으로 False로 바뀌지? -> 채팅 한 번만 날려도 False로 바뀜
+                if game.is_first is True and game.progress == 100:  # 정답일 때
+                    correct_time = datetime.datetime.now() - datetime.datetime.strptime(request.session.get('game_start_time'), "%Y-%m-%d %H:%M:%S")
+                    gameService.correct_game(game_id, correct_time)
+                    game = gameService.get_game(game_id)
+                    rankingService.update_ranking(game)  # 랭킹 업데이트
+                    userService.level_up(user_id)  # 경험치 증가
+            return JSONResponse(content={"response": response})
         else:
             return JSONResponse(content={'error': "Failed to create query"}, status_code=400)
     except Exception as e:
@@ -198,9 +198,9 @@ async def create_riddle(request: Request):
         exQueryResponse = body.get('exQueryResponse')
 
         if userService.create_riddle(user.user_id) is True:
-            problem_embedding, situation_embedding, answer_embedding = get_embeddings(problem, situation, answer)
+            problem_embedding, situation_embeddings, answer_embedding = get_embeddings(problem, situation, answer)
             riddle_id = riddleService.create_riddle(user_email, riddleTitle, problem, situation, answer,
-                                                    progress_sentences, problem_embedding, situation_embedding,
+                                                    progress_sentences, problem_embedding, situation_embeddings,
                                                     answer_embedding)
             rpService.create_riddle_prompting(riddle_id, exQueryResponse)
             return JSONResponse(content={'riddleId': riddle_id})
@@ -234,10 +234,11 @@ async def access_game(request: Request, gameId: str = Query(...)):
         game = gameService.get_game(gameId)
         riddle = riddleService.get_riddle(game.riddle_id)
         game_queries = gqService.get_queries(gameId)
+        queries = [game_query.query for game_query in game_queries]
+        queries.sort(key=lambda x: x.createdAt)   # query 생성 시각 순으로 오름차순 정렬
         gameService.reaccess(gameId)  # 재접속
         game_info = [{'gameTitle': game.title, 'problem': riddle.problem}]
-        for game_query in game_queries:
-            query = queryService.get_query(game_query.query_id)
+        for query in queries:
             game_info.append({
                 'queryId': query.query_id,
                 'query': query.query,
@@ -247,25 +248,3 @@ async def access_game(request: Request, gameId: str = Query(...)):
     except Exception as e:
         print(str(e))
         return JSONResponse(content={"error": str(e)}, status_code=404)
-
-
-def get_token_from_header(request: Request) -> str:
-    auth_header = request.headers.get('Authorization')
-    if not auth_header:
-        raise HTTPException(status_code=401, detail="Authorization header is missing")
-    try:
-        scheme, token = auth_header.split()
-        if scheme.lower() != 'bearer':
-            raise HTTPException(status_code=401, detail="Authorization header must start with Bearer")
-        return token
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid Authorization header format")
-
-
-def get_embeddings(problem, situation, answer):
-    problem_embedding = ltp_gpt.generate_embedding(problem)
-    situation_embedding = [ltp_gpt.generate_embedding(sentence.strip()) for sentence in situation]
-    answer_embedding = ltp_gpt.generate_embedding(answer)
-
-    return problem_embedding, situation_embedding, answer_embedding
-
