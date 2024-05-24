@@ -1,9 +1,11 @@
 from fastapi import APIRouter
 from starlette.responses import JSONResponse
 
+from app.auth.authenticate import authenticate
 from app.auth.jwt import *
 from app.domain.dto.UserDto import UserDto
 from app.service.UserService import UserService
+from app.util.util import *
 
 
 def get_user_router(userService: UserService):
@@ -27,5 +29,17 @@ def get_user_router(userService: UserService):
         except Exception as e:
             print(e)
             return JSONResponse(content={"error": str(e)}, status_code=400)
+
+    @router.get("/info")
+    async def info(request: Request):
+        try:
+            token = get_token_from_header(request)
+            user_email = await authenticate(token)
+            user = userService.get_user_email(user_email)
+
+            return JSONResponse(content={"riddleTicket": user.riddle_ticket, "gameTicket": user.game_ticket})
+        except Exception as e:
+            print(e)
+            return JSONResponse(content={"error": str(e)}, status_code=404)
 
     return router

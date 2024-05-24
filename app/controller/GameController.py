@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import Query, APIRouter
 from starlette.responses import JSONResponse
 
@@ -43,6 +45,7 @@ def get_game_router(userService: UserService, gameService: GameService, ugServic
             token = get_token_from_header(request)
             user_email = await authenticate(token)
             user = userService.get_user_email(user_email)
+            request.session['game_start_time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             if userService.create_game(user.user_id) is True:
                 game_id = gameService.create_game(user.user_id, riddle_id)  # game 생성
