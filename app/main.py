@@ -9,10 +9,10 @@ from app.controller.ChatController import get_chat_router
 from app.controller.GameController import get_game_router
 from app.controller.RiddleController import get_riddle_router
 from app.controller.UserController import get_user_router
-from .Init import session, engine
 # google login
 from .config import SECRET_KEY
-# service logic
+from .db_init import session, engine
+# service
 from .service.FeedbackService import FeedbackService
 from .service.GameQueryService import GameQueryService
 from .service.GameService import GameService
@@ -55,7 +55,7 @@ ugService = UserGameService(session)
 gqService = GameQueryService(session)
 rpService = RiddlePromptingService(session)
 
-# 라우터 등록
+# 라우터 등록 (Controller)
 app.include_router(get_chat_router(userService, gameService, queryService, gqService, rankingService), prefix="/chat")
 app.include_router(get_game_router(userService, gameService, ugService, gqService, riddleService), prefix="/game")
 app.include_router(get_riddle_router(userService, riddleService, rpService), prefix="/riddle")

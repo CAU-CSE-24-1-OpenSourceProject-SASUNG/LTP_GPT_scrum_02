@@ -1,4 +1,7 @@
-from app.Init import *
+from sqlalchemy import desc
+
+from app.domain.Game import Game
+from app.domain.User_Game import User_Game
 
 
 class UserGameService:

@@ -1,4 +1,7 @@
-from app.Init import *
+from app.domain.Ranking import Ranking
+from app.domain.TotalFeedback import Total_Feedback
+from app.domain.User import User
+from app.domain.User_Game import User_Game
 
 
 class UserService:

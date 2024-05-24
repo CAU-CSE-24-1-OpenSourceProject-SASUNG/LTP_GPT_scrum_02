@@ -1,6 +1,9 @@
 import datetime
 
-from app.Init import *
+from app.domain.Feedback import Feedback
+from app.domain.Game import Game
+from app.domain.Game_Query import Game_Query
+from app.domain.Query import Query
 
 
 class QueryService:

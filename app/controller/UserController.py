@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from starlette.responses import JSONResponse
 
 from app.auth.jwt import *
-from app.dto.UserDto import UserDto
+from app.domain.dto.UserDto import UserDto
 from app.service.UserService import UserService
 
 

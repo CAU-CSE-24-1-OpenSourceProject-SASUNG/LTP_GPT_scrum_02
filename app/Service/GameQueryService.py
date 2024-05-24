@@ -1,4 +1,5 @@
-from app.Init import *
+from app.domain.Game import Game
+from app.domain.Game_Query import Game_Query
 
 
 class GameQueryService:
@@ -14,4 +15,3 @@ class GameQueryService:
 
     def get_queries(self, game_id):
         return self.session.query(Game_Query).filter_by(game_id=game_id).all()
-

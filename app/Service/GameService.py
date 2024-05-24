@@ -1,6 +1,9 @@
 import datetime
 
-from app.Init import *
+from app.domain.Game import Game
+from app.domain.Game_Query import Game_Query
+from app.domain.Riddle import Riddle
+from app.domain.User_Game import User_Game
 
 
 class GameService:

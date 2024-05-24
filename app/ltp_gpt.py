@@ -5,7 +5,7 @@ import re
 import openai
 from dotenv import load_dotenv
 
-from app.Init import session
+from app.db_init import session
 from .service.RiddlePromptingService import RiddlePromptingService
 from .service.UserService import UserService
 

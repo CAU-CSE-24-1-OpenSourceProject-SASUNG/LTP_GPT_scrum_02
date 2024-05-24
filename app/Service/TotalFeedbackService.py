@@ -1,4 +1,4 @@
-from app.Init import *
+from app.domain.TotalFeedback import Total_Feedback
 
 
 class TotalFeedbackService:

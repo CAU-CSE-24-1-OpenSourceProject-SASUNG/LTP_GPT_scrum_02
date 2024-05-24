@@ -1,4 +1,4 @@
-from app.Init import *
+from app.domain.Feedback import Feedback
 
 
 class FeedbackService:

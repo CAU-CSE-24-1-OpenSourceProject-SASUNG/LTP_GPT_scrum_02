@@ -1,4 +1,4 @@
-from app.Init import *
+from app.domain.Riddle_Prompting import Riddle_Prompting
 
 
 class RiddlePromptingService:

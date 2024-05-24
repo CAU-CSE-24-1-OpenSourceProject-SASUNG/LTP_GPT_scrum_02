@@ -3,7 +3,7 @@ from starlette.responses import JSONResponse
 
 from app.auth.authenticate import authenticate
 from app.auth.jwt import *
-from app.dto.QueryInfoDto import QueryInfoDto
+from app.domain.dto.QueryInfoDto import QueryInfoDto
 from app.service.GameQueryService import GameQueryService
 from app.service.GameService import GameService
 from app.service.QueryService import QueryService

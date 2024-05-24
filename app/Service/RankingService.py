@@ -1,4 +1,7 @@
-from app.Init import *
+from sqlalchemy import asc
+
+from app.domain.Ranking import Ranking
+from app.domain.User_Game import User_Game
 
 
 class RankingService:
